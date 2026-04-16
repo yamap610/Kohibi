@@ -13,7 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="小日子">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#f7f3ee">
-<meta name="description" content="記錄寶貝每一天的美好時光">
+<meta name="description" content="記錄每一天的美好時光">
 
 <!-- PWA Icons (inline SVG → data URI，不需要額外圖片檔) -->
 
@@ -25,7 +25,7 @@
 const _manifest = {
   name: "小日子 Day's & Moments",
   short_name: "小日子",
-  description: "記錄寶貝每一天的美好時光",
+  description: "記錄每一天的美好時光",
   start_url: "./",
   display: "standalone",
   background_color: "#f7f3ee",
@@ -514,20 +514,32 @@ input[type=file]{display:none;}
 
 /* ═══ CROP MODAL ═══ */
 .crop-overlay{
-  position:fixed;inset:0;background:rgba(30,20,15,0.85);
+  position:fixed;inset:0;background:rgba(30,20,15,0.92);
   z-index:600;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:16px;
+  align-items:center;justify-content:center;gap:14px;
   opacity:0;pointer-events:none;transition:opacity 0.3s;
 }
 .crop-overlay.show{opacity:1;pointer-events:all;}
 .crop-title{font-size:13px;color:rgba(255,255,255,0.7);letter-spacing:2px;}
 .crop-canvas-wrap{
   position:relative;
-  width:min(86vw,400px);height:min(86vw,400px);
-  overflow:hidden;border-radius:4px;
-  cursor:crosshair;touch-action:none;
+  /* calendar cell is roughly portrait ~3:4 ratio */
+  width:min(75vw,320px);
+  height:min(100vw,426px);
+  overflow:hidden;border-radius:6px;
+  touch-action:none;
+  background:#111;
 }
-#cropCanvas{display:block;width:100%;height:100%;}
+#cropCanvas{
+  display:block;
+  width:100%;height:100%;
+  touch-action:none;
+}
+.crop-guide-line{
+  position:absolute;inset:0;
+  border:2px solid rgba(255,255,255,0.5);
+  border-radius:4px;pointer-events:none;
+}
 .crop-btns{display:flex;gap:10px;}
 .btn-crop-cancel{
   padding:11px 24px;border-radius:30px;
@@ -676,8 +688,8 @@ input[type=file]{display:none;}
       <div class="settings-row-left">
         <span class="settings-icon">📱</span>
         <div>
-          <div class="settings-label">匯出正方形 PNG</div>
-          <div class="settings-desc">9:16 比例，適合限時動態</div>
+          <div class="settings-label">匯出限時動態版</div>
+          <div class="settings-desc">9:16 比例，適合 IG / Line 限動</div>
         </div>
       </div>
       <span class="settings-arrow">›</span>
@@ -686,8 +698,8 @@ input[type=file]{display:none;}
       <div class="settings-row-left">
         <span class="settings-icon">🖨️</span>
         <div>
-          <div class="settings-label">列印 / 存成 PDF</div>
-          <div class="settings-desc">A4 直式，開啟列印視窗</div>
+          <div class="settings-label">匯出 PDF</div>
+          <div class="settings-desc">A4 直式，下載後可列印</div>
         </div>
       </div>
       <span class="settings-arrow">›</span>
@@ -701,7 +713,7 @@ input[type=file]{display:none;}
         <span class="settings-icon">🌸</span>
         <div>
           <div class="settings-label">小日子 Day's & Moments</div>
-          <div class="settings-desc">記錄寶貝每一天的美好時光</div>
+          <div class="settings-desc">記錄每一天的美好時光</div>
         </div>
       </div>
     </div>
@@ -713,14 +725,13 @@ input[type=file]{display:none;}
 
 <div class="crop-overlay" id="cropOverlay">
   <div class="crop-title">拖曳移動 · 捏合縮放</div>
-  <div class="crop-hint">正方形裁切，大小更整齊 ✂️</div>
-  <div class="crop-container" id="cropContainer">
-    <img class="crop-img" id="cropImg">
-    <div class="crop-guide"></div>
+  <div class="crop-canvas-wrap" id="cropWrap">
+    <canvas id="cropCanvas"></canvas>
+    <div class="crop-guide-line"></div>
   </div>
   <div class="crop-btns">
     <button class="btn-crop-cancel" id="cropCancel">取消</button>
-    <button class="btn-crop-ok"     id="cropOk">完成</button>
+    <button class="btn-crop-ok"     id="cropOk">完成 ✂️</button>
   </div>
 </div>
 
@@ -1029,10 +1040,10 @@ document.getElementById('fileInput').addEventListener('change', async function()
   const file = this.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = async ev => {
-    // open crop modal first
     const cropped = await openCrop(ev.target.result);
-    if (!cropped) return; // cancelled
+    if (!cropped) return;
     pendingSrc = cropped;
+    // show preview immediately
     const area = document.getElementById('uploadArea');
     area.innerHTML = `<img src="${pendingSrc}" style="object-fit:contain;">`;
     area.onclick = () => document.getElementById('fileInput').click();
@@ -1042,38 +1053,31 @@ document.getElementById('fileInput').addEventListener('change', async function()
 });
 
 document.getElementById('saveBtn').addEventListener('click', async () => {
-  const key   = makeKey(calYear, calMonth, selDay, activeCat);
-  const note  = document.getElementById('noteInput').value.trim();
+  const key      = makeKey(calYear, calMonth, selDay, activeCat);
+  const note     = document.getElementById('noteInput').value.trim();
   const existing = cache[key];
-
   if (!pendingSrc && !existing?.url) { closeSheet(); return; }
 
   const btn = document.getElementById('saveBtn');
-  btn.disabled = true;
-  btn.textContent = '上傳中…';
+  btn.disabled = true; btn.textContent = '儲存中…';
 
-  if (pendingSrc && window._fb) {
-    showToast('上傳中… ☁️');
-    const result = await window._fb.saveEntry(key, pendingSrc, note);
-    if (result) {
-      cache[key] = result;
-      showToast('已儲存 🌸');
-    } else {
-      // fallback: store base64 locally if firebase fails
-      cache[key] = { url: pendingSrc, note };
-      showToast('已儲存（本機）');
-    }
-  } else if (existing) {
-    // just update note
-    if (window._fb) await window._fb.saveEntry(key, pendingSrc || existing.url, note);
-    cache[key] = { ...existing, note };
-    showToast('備註已更新 ✨');
-  }
-
-  btn.disabled = false;
-  btn.textContent = '儲存';
+  // ① 立刻存進 local cache 並渲染（讓使用者馬上看到）
+  const localSrc = pendingSrc || existing.url;
+  cache[key] = { url: localSrc, note };
   closeSheet();
   renderCal();
+  showToast('已儲存 🌸');
+
+  // ② 背景上傳到 Firebase（不阻塞 UI）
+  if (pendingSrc && window._fb) {
+    window._fb.saveEntry(key, pendingSrc, note).then(result => {
+      if (result) cache[key] = result; // 更新為雲端版本
+    });
+  } else if (existing && window._fb) {
+    window._fb.saveEntry(key, localSrc, note);
+  }
+
+  btn.disabled = false; btn.textContent = '儲存';
 });
 
 document.getElementById('cancelBtn').addEventListener('click', closeSheet);
@@ -1183,106 +1187,139 @@ function saveAnniv() {
 }
 
 // ══════════════════════════════════════
-//  CROP (CSS transform approach - preserves transparency)
+//  CROP  (canvas-draw, works on iOS)
+//  Ratio: 3:4 (portrait, matches calendar cell)
 // ══════════════════════════════════════
-let _cropBase64 = null;
-let _cropX = 0, _cropY = 0, _cropScale = 1;
-let _cropDragging = false, _cropLX = 0, _cropLY = 0;
-let _cropPinch = 0;
+const CROP_W = 3, CROP_H = 4; // aspect ratio
+let _ci = null; // crop image
+let _cx = 0, _cy = 0, _cs = 1; // offset & scale
+let _dragging = false, _lx = 0, _ly = 0;
+let _pinch0 = 0, _pinchCX = 0, _pinchCY = 0;
 let _cropResolve = null;
 
-const cropContainer = document.getElementById('cropContainer');
-const cropImgEl     = document.getElementById('cropImg');
+const _cWrap   = document.getElementById('cropWrap');
+const _cCanvas = document.getElementById('cropCanvas');
+const _cCtx    = _cCanvas.getContext('2d');
 
 function openCrop(base64) {
   return new Promise(resolve => {
     _cropResolve = resolve;
-    _cropBase64  = base64;
     const img = new Image();
     img.onload = () => {
-      const SIZE = cropContainer.clientWidth;
-      // fill the square
-      const ratio  = Math.max(SIZE / img.width, SIZE / img.height);
-      _cropScale   = ratio;
-      _cropX       = (SIZE - img.width  * ratio) / 2;
-      _cropY       = (SIZE - img.height * ratio) / 2;
-      cropImgEl.src = base64;
-      _applyCropTransform();
+      _ci = img;
+      // canvas physical size = wrap display size × devicePixelRatio
+      const dpr = window.devicePixelRatio || 1;
+      const W   = _cWrap.clientWidth  * dpr;
+      const H   = _cWrap.clientHeight * dpr;
+      _cCanvas.width  = W;
+      _cCanvas.height = H;
+      _cCanvas.style.width  = _cWrap.clientWidth  + 'px';
+      _cCanvas.style.height = _cWrap.clientHeight + 'px';
+      // scale so image fills the frame
+      const s = Math.max(W / img.width, H / img.height);
+      _cs = s;
+      _cx = (W - img.width  * s) / 2;
+      _cy = (H - img.height * s) / 2;
+      _drawCrop();
       document.getElementById('cropOverlay').classList.add('show');
     };
     img.src = base64;
   });
 }
 
-function _applyCropTransform() {
-  cropImgEl.style.transform = `translate(${_cropX}px, ${_cropY}px) scale(${_cropScale})`;
-  cropImgEl.style.transformOrigin = '0 0';
-  cropImgEl.style.width  = cropImgEl.naturalWidth  + 'px';
-  cropImgEl.style.height = cropImgEl.naturalHeight + 'px';
+function _drawCrop() {
+  const W = _cCanvas.width, H = _cCanvas.height;
+  _cCtx.clearRect(0, 0, W, H);
+  _cCtx.drawImage(_ci, _cx, _cy, _ci.width * _cs, _ci.height * _cs);
 }
 
-function _getCropResult() {
-  // Render visible square area to canvas → PNG (preserves transparency)
-  const SIZE  = cropContainer.clientWidth;
-  const out   = document.createElement('canvas');
-  out.width   = SIZE * 2; // 2x for quality
-  out.height  = SIZE * 2;
-  const ctx   = out.getContext('2d');
-  ctx.scale(2, 2);
-  const img   = cropImgEl;
-  ctx.drawImage(img, _cropX, _cropY, img.naturalWidth * _cropScale, img.naturalHeight * _cropScale);
+function _cropResult() {
+  // export at 2× the display size for quality
+  const dpr = window.devicePixelRatio || 1;
+  const dispW = _cWrap.clientWidth;
+  const dispH = _cWrap.clientHeight;
+  const out = document.createElement('canvas');
+  out.width  = dispW * 2;
+  out.height = dispH * 2;
+  const ctx = out.getContext('2d');
+  // scale factor from canvas coords → output coords
+  const sx = (dispW * 2) / _cCanvas.width;
+  const sy = (dispH * 2) / _cCanvas.height;
+  ctx.drawImage(_ci,
+    _cx * sx, _cy * sy,
+    _ci.width * _cs * sx,
+    _ci.height * _cs * sy
+  );
   return out.toDataURL('image/png');
 }
 
-// Mouse events
-cropContainer.addEventListener('mousedown', e => {
-  _cropDragging=true; _cropLX=e.clientX; _cropLY=e.clientY; e.preventDefault();
+// ── pointer / touch events ──
+function _getPos(e) {
+  const r = _cCanvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  if (e.touches) {
+    return { x: (e.touches[0].clientX - r.left) * dpr,
+             y: (e.touches[0].clientY - r.top)  * dpr };
+  }
+  return { x: (e.clientX - r.left) * dpr,
+           y: (e.clientY - r.top)  * dpr };
+}
+
+_cCanvas.addEventListener('mousedown', e => {
+  _dragging=true; const p=_getPos(e); _lx=p.x; _ly=p.y; e.preventDefault();
 });
 window.addEventListener('mousemove', e => {
-  if (!_cropDragging) return;
-  _cropX += e.clientX - _cropLX; _cropY += e.clientY - _cropLY;
-  _cropLX=e.clientX; _cropLY=e.clientY;
-  _applyCropTransform();
+  if (!_dragging) return;
+  const p=_getPos(e);
+  _cx += p.x-_lx; _cy += p.y-_ly;
+  _lx=p.x; _ly=p.y;
+  _drawCrop();
 });
-window.addEventListener('mouseup', () => _cropDragging=false);
+window.addEventListener('mouseup', () => _dragging=false);
 
-// Touch events
-cropContainer.addEventListener('touchstart', e => {
+_cCanvas.addEventListener('touchstart', e => {
+  e.preventDefault();
   if (e.touches.length===1) {
-    _cropDragging=true; _cropLX=e.touches[0].clientX; _cropLY=e.touches[0].clientY;
+    _dragging=true;
+    const p=_getPos(e); _lx=p.x; _ly=p.y;
+  } else if (e.touches.length===2) {
+    _dragging=false;
+    _pinch0 = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    const r = _cCanvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio||1;
+    _pinchCX = ((e.touches[0].clientX+e.touches[1].clientX)/2 - r.left) * dpr;
+    _pinchCY = ((e.touches[0].clientY+e.touches[1].clientY)/2 - r.top)  * dpr;
   }
-  if (e.touches.length===2) {
-    _cropDragging=false;
-    _cropPinch = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-  }
-  e.preventDefault();
 },{passive:false});
 
-cropContainer.addEventListener('touchmove', e => {
-  if (e.touches.length===1 && _cropDragging) {
-    _cropX += e.touches[0].clientX - _cropLX;
-    _cropY += e.touches[0].clientY - _cropLY;
-    _cropLX=e.touches[0].clientX; _cropLY=e.touches[0].clientY;
-    _applyCropTransform();
-  }
-  if (e.touches.length===2) {
-    const dist  = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
-    const delta = dist / _cropPinch;
-    const SIZE  = cropContainer.clientWidth;
-    // zoom toward center
-    _cropX = SIZE/2 + (_cropX - SIZE/2) * delta;
-    _cropY = SIZE/2 + (_cropY - SIZE/2) * delta;
-    _cropScale *= delta;
-    _cropPinch  = dist;
-    _applyCropTransform();
-  }
+_cCanvas.addEventListener('touchmove', e => {
   e.preventDefault();
+  if (e.touches.length===1 && _dragging) {
+    const p=_getPos(e);
+    _cx += p.x-_lx; _cy += p.y-_ly;
+    _lx=p.x; _ly=p.y;
+    _drawCrop();
+  } else if (e.touches.length===2) {
+    const dist = Math.hypot(
+      e.touches[0].clientX - e.touches[1].clientX,
+      e.touches[0].clientY - e.touches[1].clientY
+    );
+    const ratio = dist / _pinch0;
+    _cx = _pinchCX + (_cx - _pinchCX) * ratio;
+    _cy = _pinchCY + (_cy - _pinchCY) * ratio;
+    _cs *= ratio;
+    _pinch0 = dist;
+    _drawCrop();
+  }
 },{passive:false});
 
-cropContainer.addEventListener('touchend', () => _cropDragging=false);
+_cCanvas.addEventListener('touchend', () => _dragging=false);
 
 document.getElementById('cropOk').addEventListener('click', () => {
-  const result = _getCropResult();
+  const result = _cropResult();
   document.getElementById('cropOverlay').classList.remove('show');
   if (_cropResolve) { _cropResolve(result); _cropResolve=null; }
 });
@@ -1331,13 +1368,14 @@ function loadHtml2Canvas() {
   });
 }
 
-// ── 取得月曆 canvas ──
+// ── 截月曆畫面 ──
 async function getCalCanvas(scale) {
   gotoPage('page-cal');
-  await new Promise(r => setTimeout(r, 400));
+  await new Promise(r => setTimeout(r, 500));
   return html2canvas(document.getElementById('page-cal'), {
     scale: scale || 2,
     useCORS: true,
+    allowTaint: true,
     backgroundColor: '#f7f3ee',
     ignoreElements: el =>
       el.classList.contains('bnav') ||
@@ -1347,79 +1385,81 @@ async function getCalCanvas(scale) {
   });
 }
 
-// ── PNG 匯出（月曆原比例，適合傳給家人）──
+// ── 下載 helper ──
+function downloadCanvas(canvas, filename) {
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// ── PNG 月曆原比例 ──
 async function exportMonthPNG() {
   showToast('產生中… 🖼️');
   await loadHtml2Canvas();
   const canvas = await getCalCanvas(2.5);
-  const a = document.createElement('a');
-  a.href = canvas.toDataURL('image/png');
-  a.download = `kohibi-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`;
-  a.click();
+  downloadCanvas(canvas, `kohibi-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`);
   showToast('PNG 已下載 🌸');
 }
 
-// ── 9:16 PNG（適合限時動態）──
+// ── 9:16 限時動態版 ──
 async function exportSquarePNG() {
   showToast('產生限動版… ✨');
   await loadHtml2Canvas();
   const src = await getCalCanvas(2.5);
 
-  // 9:16 尺寸，以寬度為基準
-  const w = src.width;
-  const h = Math.round(w * 16 / 9);
-  const sq = document.createElement('canvas');
-  sq.width = w; sq.height = h;
-  const ctx = sq.getContext('2d');
-
-  // 奶茶色背景
+  // 9:16：以寬度為準，高度 = 寬 × 16/9
+  const W = src.width;
+  const H = Math.round(W * 16 / 9);
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const ctx = out.getContext('2d');
   ctx.fillStyle = '#f7f3ee';
-  ctx.fillRect(0, 0, w, h);
-
-  // 月曆置中（垂直置中在 9:16 畫布內）
-  const offsetY = Math.round((h - src.height) / 2);
-  ctx.drawImage(src, 0, offsetY);
-
-  const a = document.createElement('a');
-  a.href = sq.toDataURL('image/png');
-  a.download = `kohibi-stories-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`;
-  a.click();
+  ctx.fillRect(0, 0, W, H);
+  // 月曆垂直置中（若月曆比 9:16 矮則置中，比 9:16 高則縮放）
+  if (src.height <= H) {
+    const oy = Math.round((H - src.height) / 2);
+    ctx.drawImage(src, 0, oy);
+  } else {
+    // 縮放月曆以符合 9:16
+    const scale = H / src.height;
+    const newW  = Math.round(src.width * scale);
+    const ox    = Math.round((W - newW) / 2);
+    ctx.drawImage(src, ox, 0, newW, H);
+  }
+  downloadCanvas(out, `kohibi-stories-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`);
   showToast('限動版已下載 📱');
 }
 
-// ── PDF / 列印 ──
+// ── PDF：截圖後直接下載 PDF（用 jsPDF）──
 async function exportMonthPDF() {
-  showToast('準備列印… 🖨️');
+  showToast('產生 PDF… 🖨️');
   await loadHtml2Canvas();
-  const canvas = await getCalCanvas(2);
-  const imgData = canvas.toDataURL('image/png');
-
-  // 把圖塞進隱藏 iframe 再 print（iOS Safari 相容）
-  let iframe = document.getElementById('printFrame');
-  if (!iframe) {
-    iframe = document.createElement('iframe');
-    iframe.id = 'printFrame';
-    iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1px;height:1px;border:none;';
-    document.body.appendChild(iframe);
+  // 載入 jsPDF
+  if (!window.jspdf) {
+    await new Promise(resolve => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+      s.onload = resolve;
+      document.head.appendChild(s);
+    });
   }
-  const doc = iframe.contentWindow.document;
-  doc.open();
-  doc.write(`<!DOCTYPE html><html><head><title>小日子 ${calYear}.${String(calMonth+1).padStart(2,'0')}</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box;}
-    body{background:#f7f3ee;}
-    img{width:100%;height:auto;display:block;}
-    @page{margin:10mm;size:A4 portrait;}
-  </style></head><body>
-
-  <img src="${imgData}">
-  </body></html>`);
-  doc.close();
-  setTimeout(() => {
-    iframe.contentWindow.focus();
-    iframe.contentWindow.print();
-    showToast('列印視窗已開啟 🖨️');
-  }, 600);
+  const canvas  = await getCalCanvas(2);
+  const imgData = canvas.toDataURL('image/png');
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  const pgW = pdf.internal.pageSize.getWidth();
+  const pgH = pdf.internal.pageSize.getHeight();
+  // 等比例放入 A4
+  const imgW = canvas.width, imgH = canvas.height;
+  const ratio = Math.min(pgW / imgW, pgH / imgH);
+  const w = imgW * ratio, h = imgH * ratio;
+  const x = (pgW - w) / 2, y = (pgH - h) / 2;
+  pdf.addImage(imgData, 'PNG', x, y, w, h);
+  pdf.save(`kohibi-${calYear}-${String(calMonth+1).padStart(2,'0')}.pdf`);
+  showToast('PDF 已下載 🖨️');
 }
 
 // ══════════════════════════════════════
