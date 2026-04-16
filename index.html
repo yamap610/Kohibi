@@ -720,7 +720,7 @@ document.getElementById('cropCancel').addEventListener('click',()=>{
 
 // ── Export / Import ──
 
-// 用 canvas 手動重繪月曆（不依賴 html2canvas，iOS 完全相容）
+// 高畫質 canvas 重繪月曆
 async function buildCalCanvas() {
   const COLS = 7;
   const days = new Date(calYear, calMonth+1, 0).getDate();
@@ -728,61 +728,79 @@ async function buildCalCanvas() {
   const offset = (firstDow+6)%7;
   const rows = Math.ceil((offset+days)/7);
 
-  const DPR   = 2;          // 2× 解析度
-  const CW    = 320 * DPR;  // 總寬
-  const HPAD  = 20 * DPR;   // 上下邊距
-  const HDR   = 60 * DPR;   // 月份標題
-  const WDH   = 22 * DPR;   // 星期列高
-  const CELL  = 80 * DPR;   // 每格高度
-  const FOOTER= 30 * DPR;
+  // 尺寸定義（高解析度，1400px 寬）
+  const CW    = 1400;
+  const HPAD  = 40;
+  const HDR   = 100;   // 月份標題區
+  const WDH   = 36;    // 星期列高
+  const CELL  = 160;   // 每個格子高度（大！）
+  const FOOTER= 50;
   const CH    = HPAD + HDR + WDH + rows*CELL + FOOTER + HPAD;
+  const colW  = CW / COLS;
 
-  const cv  = document.createElement('canvas');
-  cv.width  = CW; cv.height = CH;
+  const cv = document.createElement('canvas');
+  cv.width = CW; cv.height = CH;
   const ctx = cv.getContext('2d');
 
   // 背景
   ctx.fillStyle = '#f7f3ee';
-  ctx.fillRect(0,0,CW,CH);
+  ctx.fillRect(0, 0, CW, CH);
 
   // 月份標題
+  ctx.font = 'lighter 52px "Georgia", serif';
   ctx.fillStyle = '#6b5b4e';
-  ctx.font = `${18*DPR}px serif`;
   ctx.textAlign = 'center';
-  ctx.fillText(`${calYear}.${String(calMonth+1).padStart(2,'0')}`, CW/2, HPAD + 38*DPR);
+  ctx.letterSpacing = '8px';
+  ctx.fillText(`${calYear} . ${String(calMonth+1).padStart(2,'0')}`, CW/2, HPAD + 68);
+  ctx.letterSpacing = '0px';
 
   // 星期列
   const WDS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
-  const colW = CW / COLS;
-  ctx.font = `${7*DPR}px serif`;
-  ctx.fillStyle = '#b0a090';
+  ctx.font = '13px "Georgia", serif';
+  ctx.textAlign = 'center';
   WDS.forEach((w,i)=>{
     ctx.fillStyle = i>=5 ? '#c0836a' : '#b0a090';
-    ctx.fillText(w, colW*i + colW/2, HPAD + HDR + 15*DPR);
+    ctx.fillText(w, colW*i + colW/2, HPAD + HDR + 24);
   });
 
   const gridTop = HPAD + HDR + WDH;
 
+  // 格子背景（白紙色）
+  ctx.fillStyle = '#faf7f3';
+  ctx.fillRect(0, gridTop, CW, rows*CELL);
+
   // 格線
   ctx.strokeStyle = '#e8e0d6';
-  ctx.lineWidth = 0.5 * DPR;
-  // 外框
+  ctx.lineWidth = 1;
   ctx.strokeRect(0, gridTop, CW, rows*CELL);
-  // 垂直線
-  for(let c=1;c<COLS;c++){ ctx.beginPath(); ctx.moveTo(c*colW, gridTop); ctx.lineTo(c*colW, gridTop+rows*CELL); ctx.stroke(); }
-  // 水平線
-  for(let r=1;r<rows;r++){ ctx.beginPath(); ctx.moveTo(0, gridTop+r*CELL); ctx.lineTo(CW, gridTop+r*CELL); ctx.stroke(); }
+  for(let c=1;c<COLS;c++){
+    ctx.beginPath(); ctx.moveTo(c*colW, gridTop); ctx.lineTo(c*colW, gridTop+rows*CELL); ctx.stroke();
+  }
+  for(let r=1;r<rows;r++){
+    ctx.beginPath(); ctx.moveTo(0, gridTop+r*CELL); ctx.lineTo(CW, gridTop+r*CELL); ctx.stroke();
+  }
 
-  // 日期格子
-  const imgCache = {};
-  const loadImg = src => {
-    if(imgCache[src]) return imgCache[src];
-    return imgCache[src] = new Promise(res=>{
-      const i=new Image(); i.crossOrigin='anonymous';
-      i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src;
-    });
-  };
+  // 預先把 cache 裡的 base64 轉成 Image 物件（parallel）
+  const imgMap = {};
+  const loadPromises = [];
+  for(let r=0;r<rows;r++) for(let c=0;c<COLS;c++){
+    const d = r*COLS + c - offset + 1;
+    if(d<1||d>days) continue;
+    const key = makeKey(calYear,calMonth,d,activeCat);
+    const entry = cache[key];
+    if(entry?.url && !imgMap[key]){
+      imgMap[key] = null;
+      loadPromises.push(new Promise(res=>{
+        const img = new Image();
+        img.onload = ()=>{ imgMap[key]=img; res(); };
+        img.onerror = ()=>res();
+        img.src = entry.url;
+      }));
+    }
+  }
+  await Promise.all(loadPromises);
 
+  // 繪製日期格子
   for(let r=0;r<rows;r++){
     for(let c=0;c<COLS;c++){
       const d = r*COLS + c - offset + 1;
@@ -790,35 +808,47 @@ async function buildCalCanvas() {
       const x = c*colW, y = gridTop + r*CELL;
       const key = makeKey(calYear,calMonth,d,activeCat);
       const entry = cache[key]||null;
+      const img = imgMap[key]||null;
 
-      if(entry?.url){
-        try{
-          const img = await loadImg(entry.url);
-          if(img){
-            // 置中填滿格子（contain）
-            const scale = Math.min((colW-4*DPR)/img.width, (CELL-4*DPR)/img.height);
-            const iw = img.width*scale, ih = img.height*scale;
-            const ix = x + (colW-iw)/2, iy = y + (CELL-ih)/2;
-            ctx.drawImage(img, ix, iy, iw, ih);
-          }
-        }catch(e){}
-      }
+      if(img){
+        // 照片置中 contain，留少量 padding
+        const pad = 6;
+        const maxW = colW - pad*2, maxH = CELL - pad*2;
+        const scale = Math.min(maxW/img.width, maxH/img.height);
+        const iw = img.width*scale, ih = img.height*scale;
+        const ix = x + (colW-iw)/2, iy = y + (CELL-ih)/2;
+        ctx.drawImage(img, ix, iy, iw, ih);
 
-      // 日期數字（有照片就不顯示）
-      if(!entry?.url){
-        ctx.font = `${8*DPR}px serif`;
+        // 備註小字
+        if(entry?.note){
+          ctx.font = '11px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillStyle = 'rgba(255,255,255,0.9)';
+          ctx.fillText(entry.note, x+colW/2, y+CELL-8);
+        }
+      } else {
+        // 日期數字
+        ctx.font = `14px "Georgia", serif`;
         ctx.textAlign = 'left';
         ctx.fillStyle = c>=5 ? '#c0836a' : '#8a7060';
-        ctx.fillText(String(d), x + 4*DPR, y + 13*DPR);
+        ctx.fillText(String(d), x+8, y+20);
+
+        // 備註（如果有但沒有圖）
+        if(entry?.note){
+          ctx.font = '11px sans-serif';
+          ctx.fillStyle = '#b0a090';
+          ctx.textAlign = 'center';
+          ctx.fillText(entry.note, x+colW/2, y+CELL-8);
+        }
       }
     }
   }
 
-  // footer
-  ctx.font = `${8*DPR}px serif`;
+  // Footer
+  ctx.font = '14px "Georgia", serif';
   ctx.textAlign = 'left';
   ctx.fillStyle = '#b0a090';
-  ctx.fillText("小日子 | Day's & Moments", 8*DPR, gridTop + rows*CELL + 20*DPR);
+  ctx.fillText("小日子  |  Day's & Moments", 12, gridTop + rows*CELL + 34);
 
   return cv;
 }
