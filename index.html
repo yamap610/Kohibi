@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -6,6 +7,7 @@
 <title>小日子 | Day's & Moments</title>
 
 <!-- PWA -->
+
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="小日子">
@@ -14,9 +16,11 @@
 <meta name="description" content="記錄寶貝每一天的美好時光">
 
 <!-- PWA Icons (inline SVG → data URI，不需要額外圖片檔) -->
+
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%23f7f3ee'/%3E%3Ctext x='256' y='320' font-size='260' text-anchor='middle'%3E🌸%3C/text%3E%3Ctext x='256' y='460' font-size='72' text-anchor='middle' font-family='serif' fill='%236b5b4e' letter-spacing='2'%3E小日子%3C/text%3E%3C/svg%3E">
 
 <!-- Inline manifest -->
+
 <script>
 const _manifest = {
   name: "小日子 Day's & Moments",
@@ -46,6 +50,7 @@ document.currentScript.parentNode.appendChild(_link);
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
 
 <!-- Firebase -->
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -62,7 +67,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
-// ── 圖片壓縮：縮小到最長邊 600px，quality 0.7，約 60-120KB ──
+// ── 圖片壓縮：縮小到最長邊 600px，保留透明背景用 PNG ──
 function compressImage(base64) {
   return new Promise(resolve => {
     const img = new Image();
@@ -75,8 +80,12 @@ function compressImage(base64) {
       }
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      resolve(canvas.toDataURL('image/jpeg', 0.72));
+      const ctx = canvas.getContext('2d');
+      // 不填白底，保留透明
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
+      // PNG 保留透明，約 100-300KB
+      resolve(canvas.toDataURL('image/png'));
     };
     img.src = base64;
   });
@@ -471,10 +480,12 @@ input[type=file]{display:none;}
 }
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
+
 </head>
 <body>
 
 <!-- ═══ CALENDAR PAGE ═══ -->
+
 <div class="page active" id="page-cal">
   <div class="cal-header">
     <button class="nav-btn" id="prevBtn">＜</button>
@@ -500,6 +511,7 @@ input[type=file]{display:none;}
 </div>
 
 <!-- ═══ STATS PAGE ═══ -->
+
 <div class="page" id="page-stats">
   <div class="stats-header">本月記錄</div>
   <div class="stats-nav">
@@ -511,6 +523,7 @@ input[type=file]{display:none;}
 </div>
 
 <!-- ═══ ANNIVERSARY PAGE ═══ -->
+
 <div class="page" id="page-anniv">
   <div class="settings-header">紀念日 🎀</div>
   <div class="anniv-list">
@@ -530,6 +543,7 @@ input[type=file]{display:none;}
 </div>
 
 <!-- ═══ SETTINGS PAGE ═══ -->
+
 <div class="page" id="page-settings">
   <div class="settings-header">設定</div>
 
@@ -597,10 +611,12 @@ input[type=file]{display:none;}
 </div>
 
 <!-- file inputs -->
+
 <input type="file" id="fileInput"   accept="image/*" style="display:none">
 <input type="file" id="importInput" accept=".json"   style="display:none">
 
 <!-- ═══ SHEET MODAL ═══ -->
+
 <div class="overlay" id="overlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -626,6 +642,7 @@ input[type=file]{display:none;}
 </div>
 
 <!-- ═══ BOTTOM NAV ═══ -->
+
 <nav class="bnav">
   <div class="bnav-item active" data-page="page-cal">
     <span class="bi">📅</span><span>日曆</span>
@@ -1080,5 +1097,6 @@ function printCalendar() {
 renderCal(); // show empty grid immediately, FB data fills in when ready
 renderAnnivList();
 </script>
+
 </body>
 </html>
