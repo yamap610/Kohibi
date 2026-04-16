@@ -1,0 +1,1084 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>小日子 | Day's & Moments</title>
+
+<!-- PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="小日子">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f7f3ee">
+<meta name="description" content="記錄寶貝每一天的美好時光">
+
+<!-- PWA Icons (inline SVG → data URI，不需要額外圖片檔) -->
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%23f7f3ee'/%3E%3Ctext x='256' y='320' font-size='260' text-anchor='middle'%3E🌸%3C/text%3E%3Ctext x='256' y='460' font-size='72' text-anchor='middle' font-family='serif' fill='%236b5b4e' letter-spacing='2'%3E小日子%3C/text%3E%3C/svg%3E">
+
+<!-- Inline manifest -->
+<script>
+const _manifest = {
+  name: "小日子 Day's & Moments",
+  short_name: "小日子",
+  description: "記錄寶貝每一天的美好時光",
+  start_url: "./",
+  display: "standalone",
+  background_color: "#f7f3ee",
+  theme_color: "#f7f3ee",
+  orientation: "portrait",
+  icons: [
+    {
+      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%23f7f3ee'/%3E%3Ctext x='256' y='320' font-size='260' text-anchor='middle'%3E🌸%3C/text%3E%3Ctext x='256' y='460' font-size='72' text-anchor='middle' font-family='serif' fill='%236b5b4e' letter-spacing='2'%3E小日子%3C/text%3E%3C/svg%3E",
+      sizes: "512x512",
+      type: "image/svg+xml",
+      purpose: "any maskable"
+    }
+  ]
+};
+const _blob = new Blob([JSON.stringify(_manifest)], {type:'application/json'});
+const _url  = URL.createObjectURL(_blob);
+const _link = document.createElement('link');
+_link.rel = 'manifest'; _link.href = _url;
+document.currentScript.parentNode.appendChild(_link);
+</script>
+
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAFGSQOvAp1thZkWBZ-nLHe-uR8llDQDI8",
+  authDomain: "home-hub-be41f.firebaseapp.com",
+  projectId: "home-hub-be41f",
+  storageBucket: "home-hub-be41f.firebasestorage.app",
+  messagingSenderId: "286497032414",
+  appId: "1:286497032414:web:16d3f0242a400d0de85a4f"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+
+// ── 圖片壓縮：縮小到最長邊 600px，quality 0.7，約 60-120KB ──
+function compressImage(base64) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 600;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else       { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', 0.72));
+    };
+    img.src = base64;
+  });
+}
+
+window._fb = {
+  // 壓縮後存進 Firestore（單筆限制 1MB，壓縮後約 80-150KB，OK）
+  async saveEntry(key, base64, note) {
+    try {
+      const compressed = await compressImage(base64);
+      await setDoc(doc(db, 'kohibi', key), { url: compressed, note: note||'' });
+      return { url: compressed, note: note||'' };
+    } catch(e) {
+      console.error('FB save error', e);
+      return null;
+    }
+  },
+
+  async getEntry(key) {
+    try {
+      const snap = await getDoc(doc(db, 'kohibi', key));
+      return snap.exists() ? snap.data() : null;
+    } catch(e) { return null; }
+  },
+
+  async deleteEntry(key) {
+    try {
+      await deleteDoc(doc(db, 'kohibi', key));
+    } catch(e) { console.error('FB delete error', e); }
+  }
+};
+
+window.dispatchEvent(new Event('fb-ready'));
+</script>
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#f7f3ee;
+  --paper:#faf7f3;
+  --line:#e8e0d6;
+  --sat:#c0836a;
+  --text:#6b5b4e;
+  --light:#b0a090;
+  --accent:#c8a898;
+  --green:#8fa88a;
+  --blue:#8a9bb0;
+}
+html,body{background:var(--bg);font-family:'Zen Maru Gothic',sans-serif;color:var(--text);overflow-x:hidden;}
+
+/* ═══ PAGES ═══ */
+.page{display:none;min-height:100vh;padding-bottom:80px;}
+.page.active{display:block;}
+
+/* ═══ BOTTOM NAV ═══ */
+.bnav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:rgba(250,247,243,0.97);
+  backdrop-filter:blur(14px);
+  border-top:1px solid var(--line);
+  display:flex;justify-content:space-around;
+  padding:8px 0 max(10px,env(safe-area-inset-bottom));
+  z-index:200;
+}
+.bnav-item{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  cursor:pointer;
+  font-size:10px;letter-spacing:0.5px;
+  padding:4px 14px;
+  color:rgba(176,160,144,0.45); /* inactive: very faded */
+  transition:color 0.2s;
+}
+.bnav-item .bi{font-size:21px;transition:transform 0.2s;opacity:0.45;}
+.bnav-item span:last-child{opacity:0.45;}
+/* active: full opacity */
+.bnav-item.active{color:var(--text);}
+.bnav-item.active .bi{transform:scale(1.12);opacity:1;}
+.bnav-item.active span:last-child{opacity:1;}
+
+/* ═══ HEADER ═══ */
+.cal-header{
+  padding:28px 20px 10px;
+  display:flex;align-items:center;justify-content:center;gap:20px;
+  background:var(--bg);position:sticky;top:0;z-index:100;
+}
+.nav-btn{
+  background:none;border:none;font-size:20px;color:var(--light);
+  cursor:pointer;width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Cormorant Garamond',serif;transition:all 0.2s;
+}
+.nav-btn:hover{color:var(--text);background:rgba(0,0,0,0.05);}
+.month-display{
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:clamp(26px,6vw,40px);letter-spacing:6px;color:var(--text);
+}
+
+/* ═══ CAT TABS ═══ */
+.cat-tabs{
+  display:flex;justify-content:center;gap:6px;
+  padding:6px 14px 14px;flex-wrap:wrap;
+}
+.cat-tab{
+  padding:5px 14px;border-radius:30px;
+  border:1.5px solid var(--line);background:transparent;
+  font-family:'Zen Maru Gothic',sans-serif;font-size:12px;
+  color:var(--light);cursor:pointer;transition:all 0.2s;
+  display:flex;align-items:center;gap:4px;
+}
+.cat-tab:hover{border-color:var(--accent);color:var(--text);}
+.cat-tab.active{background:var(--text);border-color:var(--text);color:#faf7f3;}
+
+/* ═══ CALENDAR ═══ */
+.cal-outer{padding:0 8px 8px;max-width:700px;margin:0 auto;}
+.cal-table{width:100%;border-collapse:collapse;border:1px solid var(--line);background:var(--paper);}
+.weekday-header th{
+  font-family:'Cormorant Garamond',serif;font-weight:400;
+  font-size:clamp(8px,1.8vw,11px);letter-spacing:2px;color:var(--light);
+  padding:9px 0 7px;text-align:center;border-bottom:1px solid var(--line);
+  width:calc(100%/7);
+}
+.weekday-header th.sat,.weekday-header th.sun{color:var(--sat);}
+
+.cal-table td{
+  border:1px solid var(--line);vertical-align:top;padding:0;
+  height:clamp(82px,19vw,145px);width:calc(100%/7);
+  position:relative;cursor:pointer;overflow:hidden;transition:background 0.15s;
+}
+.cal-table td:hover{background:rgba(200,168,152,0.07);}
+.cal-table td.empty{cursor:default;background:rgba(0,0,0,0.01);}
+.cal-table td.today{background:rgba(200,168,152,0.1);}
+
+.day-num{
+  position:absolute;top:5px;left:6px;
+  font-family:'Cormorant Garamond',serif;font-weight:400;
+  font-size:clamp(10px,1.9vw,13px);color:var(--text);
+  line-height:1;z-index:3;transition:opacity 0.2s;
+}
+.day-num.sat,.day-num.sun{color:var(--sat);}
+.day-num.today-num{
+  background:var(--sat);color:white;
+  width:19px;height:19px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:9px;
+}
+.has-photo .day-num{opacity:0;}
+
+.sticker-zone{
+  position:absolute;inset:0;
+  display:flex;align-items:flex-end;justify-content:center;
+  padding-bottom:2px;z-index:1;
+}
+.sticker-photo{
+  height:95%;width:auto;max-width:96%;
+  object-fit:contain;
+  transform:rotate(var(--tilt,0deg));
+  transform-origin:bottom center;
+  transition:transform 0.2s;
+  filter:drop-shadow(0 2px 6px rgba(80,60,50,0.18));
+}
+.cal-table td:hover .sticker-photo{transform:rotate(0deg) scale(1.05);}
+
+/* loading shimmer on cell */
+.sticker-loading{
+  height:70%;width:60%;
+  background:linear-gradient(90deg,var(--line) 25%,rgba(255,255,255,0.5) 50%,var(--line) 75%);
+  background-size:200% 100%;
+  animation:shimmer 1.2s infinite;
+  border-radius:8px;margin-bottom:4px;
+}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.note-label{
+  position:absolute;bottom:3px;left:2px;right:2px;
+  font-size:clamp(6px,1.2vw,8px);color:var(--light);
+  text-align:center;line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  z-index:4;pointer-events:none;
+}
+.has-photo .note-label{color:rgba(255,255,255,0.9);text-shadow:0 1px 3px rgba(0,0,0,0.35);}
+
+.add-hint{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity 0.2s;
+}
+.cal-table td:hover .add-hint{opacity:1;}
+.add-hint span{
+  width:24px;height:24px;border-radius:50%;
+  border:1.5px dashed var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:var(--accent);background:rgba(250,247,243,0.85);
+}
+
+/* special dot */
+.special-dot{
+  position:absolute;bottom:3px;right:3px;
+  width:6px;height:6px;border-radius:50%;
+  background:var(--sat);z-index:5;box-shadow:0 0 0 1.5px white;
+}
+
+/* ═══ FOOTER ═══ */
+.footer-deco{
+  display:flex;align-items:flex-end;justify-content:space-between;
+  padding:14px 18px 24px;max-width:700px;margin:0 auto;
+}
+.footer-title{
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:14px;letter-spacing:3px;color:var(--light);
+}
+
+/* ═══ SHEET OVERLAY ═══ */
+.overlay{
+  position:fixed;inset:0;background:rgba(80,60,50,0.28);
+  backdrop-filter:blur(8px);z-index:400;
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.3s;
+}
+.overlay.show{opacity:1;pointer-events:all;}
+.sheet{
+  background:var(--paper);border-radius:24px 24px 0 0;
+  padding:18px 20px 36px;width:100%;max-width:520px;
+  transform:translateY(100%);
+  transition:transform 0.35s cubic-bezier(0.34,1.4,0.64,1);
+  max-height:92vh;overflow-y:auto;
+}
+.overlay.show .sheet{transform:translateY(0);}
+.sheet-handle{width:34px;height:3px;background:var(--line);border-radius:2px;margin:0 auto 16px;}
+.sheet-title{
+  font-family:'Cormorant Garamond',serif;font-size:19px;
+  letter-spacing:3px;color:var(--text);text-align:center;margin-bottom:3px;
+}
+.sheet-sub{text-align:center;font-size:11px;color:var(--light);margin-bottom:14px;}
+
+.upload-area{
+  width:150px;aspect-ratio:3/4;margin:0 auto 14px;
+  border:2px dashed var(--line);border-radius:14px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px;cursor:pointer;background:rgba(0,0,0,0.01);overflow:hidden;
+  transition:border-color 0.2s;
+}
+.upload-area:hover{border-color:var(--accent);}
+.upload-area img{width:100%;height:100%;object-fit:contain;}
+.upload-icon{font-size:26px;opacity:0.4;}
+.upload-text{font-size:10px;color:var(--light);text-align:center;line-height:1.6;}
+input[type=file]{display:none;}
+
+.note-row{margin-bottom:14px;}
+.note-row label{font-size:11px;color:var(--light);display:block;margin-bottom:5px;letter-spacing:1px;}
+.note-input{
+  width:100%;padding:9px 12px;border-radius:10px;
+  border:1.5px solid var(--line);background:rgba(255,255,255,0.6);
+  font-family:'Zen Maru Gothic',sans-serif;font-size:13px;color:var(--text);
+  outline:none;transition:border-color 0.2s;
+}
+.note-input:focus{border-color:var(--accent);}
+
+.tip-box{
+  background:rgba(200,168,152,0.08);border-radius:10px;
+  padding:9px 12px;font-size:10px;color:var(--light);
+  text-align:center;margin-bottom:14px;line-height:1.7;
+}
+.tip-box a{color:var(--accent);text-decoration:none;}
+.sheet-btns{display:flex;gap:8px;}
+.btn-cancel{
+  flex:1;padding:12px;border-radius:40px;
+  border:1.5px solid var(--line);background:none;
+  font-family:'Zen Maru Gothic',sans-serif;font-size:13px;color:var(--light);cursor:pointer;
+}
+.btn-save{
+  flex:2;padding:12px;border-radius:40px;border:none;
+  background:var(--text);font-family:'Zen Maru Gothic',sans-serif;
+  font-size:13px;color:#faf7f3;font-weight:500;cursor:pointer;
+  letter-spacing:1px;transition:opacity 0.2s;
+}
+.btn-save:hover{opacity:0.85;}
+.btn-save:disabled{opacity:0.5;cursor:wait;}
+.btn-delete{
+  display:block;margin:0 auto 10px;background:none;border:none;
+  font-size:11px;color:#c4836a;cursor:pointer;letter-spacing:1px;
+  text-decoration:underline;font-family:'Zen Maru Gothic',sans-serif;
+}
+
+/* ═══ STATS PAGE ═══ */
+.stats-header{
+  padding:32px 20px 8px;
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:28px;letter-spacing:4px;color:var(--text);text-align:center;
+}
+.stats-nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:8px 0 20px;}
+.stats-month-label{font-family:'Cormorant Garamond',serif;font-size:18px;letter-spacing:3px;color:var(--text);}
+.stat-cards{display:flex;flex-direction:column;gap:14px;padding:0 16px 16px;max-width:500px;margin:0 auto;}
+.stat-card{
+  background:var(--paper);border-radius:16px;
+  border:1px solid var(--line);padding:14px 16px;
+}
+.stat-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.stat-cat-name{font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;}
+.stat-count{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--text);}
+.stat-count span{font-size:12px;color:var(--light);font-family:'Zen Maru Gothic',sans-serif;}
+.stat-bar-bg{height:6px;background:var(--line);border-radius:3px;overflow:hidden;}
+.stat-bar-fill{height:100%;border-radius:3px;transition:width 0.7s ease;background:var(--accent);}
+.stat-bar-fill.c-food{background:#c9a87c;}
+.stat-bar-fill.c-drink{background:var(--blue);}
+.stat-bar-fill.c-life{background:var(--green);}
+.stat-pct{font-size:11px;color:var(--light);margin-top:8px;letter-spacing:1px;}
+.stat-empty{font-size:11px;color:var(--light);text-align:center;padding:14px;letter-spacing:1px;}
+
+/* ═══ SETTINGS PAGE ═══ */
+.settings-header{
+  padding:32px 20px 16px;
+  font-family:'Cormorant Garamond',serif;font-weight:300;
+  font-size:28px;letter-spacing:4px;color:var(--text);text-align:center;
+}
+.settings-section{max-width:500px;margin:0 auto 20px;padding:0 16px;}
+.settings-section-title{
+  font-size:10px;letter-spacing:2px;color:var(--light);
+  padding:0 4px 8px;border-bottom:1px solid var(--line);margin-bottom:2px;
+}
+.settings-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 4px;border-bottom:1px solid rgba(232,224,214,0.5);
+  cursor:pointer;transition:opacity 0.2s;
+}
+.settings-row:hover{opacity:0.7;}
+.settings-row:last-child{border-bottom:none;}
+.settings-row-left{display:flex;align-items:center;gap:12px;}
+.settings-icon{font-size:20px;width:28px;text-align:center;}
+.settings-label{font-size:14px;color:var(--text);}
+.settings-desc{font-size:10px;color:var(--light);margin-top:2px;}
+.settings-arrow{font-size:14px;color:var(--line);}
+.settings-footer{text-align:center;padding:20px;font-size:11px;color:var(--light);letter-spacing:1px;}
+
+/* sync status badge */
+.sync-badge{
+  font-size:10px;padding:2px 8px;border-radius:10px;
+  background:rgba(143,168,138,0.2);color:var(--green);letter-spacing:0.5px;
+}
+.sync-badge.err{background:rgba(192,131,106,0.15);color:var(--sat);}
+
+/* ═══ ANNIVERSARY PAGE ═══ */
+.anniv-list{max-width:500px;margin:0 auto;padding:0 16px 16px;}
+.anniv-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 4px;border-bottom:1px solid rgba(232,224,214,0.5);
+}
+.anniv-item:last-child{border-bottom:none;}
+.anniv-left{display:flex;align-items:center;gap:10px;}
+.anniv-date{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--sat);letter-spacing:1px;min-width:54px;}
+.anniv-name{font-size:13px;color:var(--text);}
+.anniv-del{background:none;border:none;font-size:16px;color:var(--line);cursor:pointer;padding:4px;}
+.anniv-del:hover{color:var(--sat);}
+.add-anniv-row{
+  display:flex;align-items:center;gap:8px;
+  padding:12px 4px;font-size:13px;color:var(--accent);cursor:pointer;
+}
+.anniv-form{
+  background:rgba(200,168,152,0.08);border-radius:12px;
+  padding:14px;margin-bottom:14px;display:none;
+}
+.anniv-form.show{display:block;}
+.anniv-form-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
+.anniv-input{
+  flex:1;min-width:80px;padding:8px 10px;border-radius:8px;
+  border:1.5px solid var(--line);background:white;
+  font-family:'Zen Maru Gothic',sans-serif;font-size:12px;color:var(--text);outline:none;
+}
+.anniv-input:focus{border-color:var(--accent);}
+.btn-anniv-save{
+  padding:8px 16px;border-radius:20px;border:none;
+  background:var(--text);color:#faf7f3;
+  font-family:'Zen Maru Gothic',sans-serif;font-size:12px;cursor:pointer;
+}
+.anniv-empty{font-size:12px;color:var(--light);text-align:center;padding:20px;letter-spacing:1px;}
+
+/* ═══ PRINT ═══ */
+@media print{
+  .bnav,.cat-tabs,.cal-header .nav-btn,.overlay,.page:not(#page-cal){display:none!important;}
+  .page#page-cal{display:block!important;padding-bottom:0;}
+  body{background:white;}
+  .cal-outer{padding:0;}
+  .cal-header{position:static;padding:16px 20px 8px;}
+  .cal-table td{height:120px;}
+  .day-num{opacity:1!important;}
+}
+
+/* ═══ TOAST ═══ */
+.toast{
+  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--text);color:#faf7f3;
+  padding:10px 20px;border-radius:30px;font-size:13px;
+  opacity:0;transition:all 0.3s;pointer-events:none;z-index:500;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+</style>
+</head>
+<body>
+
+<!-- ═══ CALENDAR PAGE ═══ -->
+<div class="page active" id="page-cal">
+  <div class="cal-header">
+    <button class="nav-btn" id="prevBtn">＜</button>
+    <div class="month-display" id="monthDisplay">2026.04</div>
+    <button class="nav-btn" id="nextBtn">＞</button>
+  </div>
+  <div class="cat-tabs">
+    <div class="cat-tab active" data-cat="outfit">👗 穿搭</div>
+    <div class="cat-tab" data-cat="food">🍽️ 美食</div>
+    <div class="cat-tab" data-cat="drink">🧋 飲料</div>
+    <div class="cat-tab" data-cat="life">✨ 生活</div>
+  </div>
+  <div class="cal-outer">
+    <table class="cal-table">
+      <thead><tr class="weekday-header" id="weekdayRow"></tr></thead>
+      <tbody id="calBody"></tbody>
+    </table>
+  </div>
+  <div class="footer-deco">
+    <div class="footer-title">小日子 | Day's &amp; Moments</div>
+    <div style="font-size:30px;opacity:0.55">🌸🍵</div>
+  </div>
+</div>
+
+<!-- ═══ STATS PAGE ═══ -->
+<div class="page" id="page-stats">
+  <div class="stats-header">本月記錄</div>
+  <div class="stats-nav">
+    <button class="nav-btn" id="statsPrevBtn">＜</button>
+    <div class="stats-month-label" id="statsMonthLabel">2026.04</div>
+    <button class="nav-btn" id="statsNextBtn">＞</button>
+  </div>
+  <div class="stat-cards" id="statCards"></div>
+</div>
+
+<!-- ═══ ANNIVERSARY PAGE ═══ -->
+<div class="page" id="page-anniv">
+  <div class="settings-header">紀念日 🎀</div>
+  <div class="anniv-list">
+    <div class="anniv-form" id="annivForm">
+      <div class="anniv-form-row">
+        <input class="anniv-input" id="annivMonth" type="number" min="1" max="12" placeholder="月">
+        <input class="anniv-input" id="annivDay"   type="number" min="1" max="31" placeholder="日">
+        <input class="anniv-input" id="annivName"  type="text" placeholder="名稱 例：寶貝生日🎂" maxlength="12">
+      </div>
+      <button class="btn-anniv-save" onclick="saveAnniv()">新增</button>
+    </div>
+    <div class="add-anniv-row" onclick="toggleAnnivForm()">
+      <span>＋</span><span>新增紀念日</span>
+    </div>
+    <div id="annivListEl"></div>
+  </div>
+</div>
+
+<!-- ═══ SETTINGS PAGE ═══ -->
+<div class="page" id="page-settings">
+  <div class="settings-header">設定</div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">雲端同步</div>
+    <div class="settings-row" style="cursor:default;">
+      <div class="settings-row-left">
+        <span class="settings-icon">☁️</span>
+        <div>
+          <div class="settings-label">Firebase 自動同步</div>
+          <div class="settings-desc">照片壓縮後存於 Firestore，免費方案</div>
+        </div>
+      </div>
+      <span class="sync-badge" id="syncBadge">連線中…</span>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">備份與匯出</div>
+    <div class="settings-row" onclick="exportJSON()">
+      <div class="settings-row-left">
+        <span class="settings-icon">💾</span>
+        <div>
+          <div class="settings-label">備份所有資料</div>
+          <div class="settings-desc">匯出 .json 紀錄檔（不含圖片）</div>
+        </div>
+      </div>
+      <span class="settings-arrow">›</span>
+    </div>
+    <div class="settings-row" onclick="importJSON()">
+      <div class="settings-row-left">
+        <span class="settings-icon">📥</span>
+        <div>
+          <div class="settings-label">從備份還原</div>
+          <div class="settings-desc">載入之前匯出的 .json 檔案</div>
+        </div>
+      </div>
+      <span class="settings-arrow">›</span>
+    </div>
+    <div class="settings-row" onclick="printCalendar()">
+      <div class="settings-row-left">
+        <span class="settings-icon">🖨️</span>
+        <div>
+          <div class="settings-label">列印月曆</div>
+          <div class="settings-desc">開啟列印視窗，可存成 PDF</div>
+        </div>
+      </div>
+      <span class="settings-arrow">›</span>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">關於</div>
+    <div class="settings-row" style="cursor:default;">
+      <div class="settings-row-left">
+        <span class="settings-icon">🌸</span>
+        <div>
+          <div class="settings-label">小日子 Day's & Moments</div>
+          <div class="settings-desc">記錄寶貝每一天的美好時光</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="settings-footer">照片壓縮後存於 Firestore · 免費方案 · 請定期備份</div>
+</div>
+
+<!-- file inputs -->
+<input type="file" id="fileInput"   accept="image/*" style="display:none">
+<input type="file" id="importInput" accept=".json"   style="display:none">
+
+<!-- ═══ SHEET MODAL ═══ -->
+<div class="overlay" id="overlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title" id="sheetTitle">4月15日</div>
+    <div class="sheet-sub"   id="sheetSub">👗 穿搭記錄</div>
+    <div class="upload-area" id="uploadArea">
+      <span class="upload-icon">📷</span>
+      <div class="upload-text">點此上傳照片<br>（去背後效果最棒）</div>
+    </div>
+    <div class="note-row">
+      <label>📝 備註（選填）</label>
+      <input class="note-input" id="noteInput" type="text" placeholder="例：媽媽買的新裙子 🎀" maxlength="20">
+    </div>
+    <div class="tip-box">
+      💡 <a href="https://www.remove.bg/zh" target="_blank">remove.bg</a> 免費去背 → 貼紙效果超美 ✨
+    </div>
+    <button class="btn-delete" id="deleteBtn" style="display:none">刪除這張照片</button>
+    <div class="sheet-btns">
+      <button class="btn-cancel" id="cancelBtn">取消</button>
+      <button class="btn-save"   id="saveBtn">儲存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BOTTOM NAV ═══ -->
+<nav class="bnav">
+  <div class="bnav-item active" data-page="page-cal">
+    <span class="bi">📅</span><span>日曆</span>
+  </div>
+  <div class="bnav-item" data-page="page-stats">
+    <span class="bi">📊</span><span>統計</span>
+  </div>
+  <div class="bnav-item" data-page="page-anniv">
+    <span class="bi">🎀</span><span>紀念日</span>
+  </div>
+  <div class="bnav-item" data-page="page-settings">
+    <span class="bi">⚙️</span><span>設定</span>
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════
+//  CONSTANTS
+// ══════════════════════════════════════
+const WD       = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+const WD_CLS   = ['','','','','','sat','sun'];
+const DOW_JP   = ['日','一','二','三','四','五','六'];
+const MONTHS   = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+const TILTS    = ['-2.5deg','1.8deg','-1.2deg','2.2deg','0deg','-1.8deg','1.5deg','-0.8deg'];
+const CATS = [
+  {id:'outfit',icon:'👗',name:'穿搭'},
+  {id:'food',  icon:'🍽️',name:'美食'},
+  {id:'drink', icon:'🧋',name:'飲料'},
+  {id:'life',  icon:'✨',name:'生活'},
+];
+
+// ══════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════
+const today = new Date();
+let calYear  = today.getFullYear();
+let calMonth = today.getMonth();
+let statsYear  = calYear;
+let statsMonth = calMonth;
+let activeCat  = 'outfit';
+let selDay     = null;
+let pendingSrc = null;
+let fbReady    = false;
+
+// Local cache: key → { url, note }
+// url can be either a Firebase download URL or a base64 string (while uploading)
+const cache = {};
+
+// Anniversaries (local only, no need for cloud)
+const ANNIV_KEY = 'kohibi_anniv_v4';
+let anniversaries = JSON.parse(localStorage.getItem(ANNIV_KEY) || '[]');
+const persistAnniv = () => localStorage.setItem(ANNIV_KEY, JSON.stringify(anniversaries));
+
+// ── key helper ──
+const makeKey = (y,m,d,c) => `${y}-${m}-${d}-${c}`;
+
+// ══════════════════════════════════════
+//  FIREBASE READY
+// ══════════════════════════════════════
+window.addEventListener('fb-ready', async () => {
+  fbReady = true;
+  document.getElementById('syncBadge').textContent = '已連線 ✓';
+  // Preload current month cache
+  await preloadMonth(calYear, calMonth);
+  renderCal();
+});
+
+// Fallback if FB fails to load
+setTimeout(()=>{
+  if(!fbReady){
+    document.getElementById('syncBadge').textContent = '離線模式';
+    document.getElementById('syncBadge').classList.add('err');
+  }
+}, 8000);
+
+async function preloadMonth(y, m) {
+  if (!window._fb) return;
+  const daysInMonth = new Date(y, m+1, 0).getDate();
+  for (const cat of CATS) {
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = makeKey(y,m,d,cat.id);
+      if (!cache[key]) {
+        const entry = await window._fb.getEntry(key);
+        if (entry) cache[key] = entry;
+      }
+    }
+  }
+}
+
+// ══════════════════════════════════════
+//  TOAST
+// ══════════════════════════════════════
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ══════════════════════════════════════
+//  PAGE NAVIGATION
+// ══════════════════════════════════════
+function gotoPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.bnav-item').forEach(b => {
+    b.classList.toggle('active', b.dataset.page === id);
+  });
+  if (id === 'page-stats')  renderStats();
+  if (id === 'page-anniv')  renderAnnivList();
+}
+document.querySelectorAll('.bnav-item').forEach(b => {
+  b.addEventListener('click', () => gotoPage(b.dataset.page));
+});
+
+// ══════════════════════════════════════
+//  CALENDAR RENDER
+// ══════════════════════════════════════
+function renderCal() {
+  document.getElementById('monthDisplay').textContent =
+    `${calYear}.${String(calMonth+1).padStart(2,'0')}`;
+
+  document.getElementById('weekdayRow').innerHTML =
+    WD.map((w,i) => `<th class="${WD_CLS[i]}">${w}</th>`).join('');
+
+  const body = document.getElementById('calBody');
+  body.innerHTML = '';
+
+  const firstDow    = new Date(calYear, calMonth, 1).getDay();
+  const offset      = (firstDow + 6) % 7;
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const rows        = Math.ceil((offset + daysInMonth) / 7);
+
+  for (let r = 0; r < rows; r++) {
+    const tr = document.createElement('tr');
+    for (let c = 0; c < 7; c++) {
+      const d  = r*7 + c - offset + 1;
+      const td = document.createElement('td');
+      if (d < 1 || d > daysInMonth) {
+        td.className = 'empty';
+      } else {
+        const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
+        if (isToday) td.classList.add('today');
+
+        const key   = makeKey(calYear, calMonth, d, activeCat);
+        const entry = cache[key] || null;
+
+        if (entry?.url) td.classList.add('has-photo');
+
+        // date num
+        const numEl = document.createElement('div');
+        numEl.className = 'day-num' + (c===5?' sat':c===6?' sun':'') + (isToday?' today-num':'');
+        numEl.textContent = d;
+        td.appendChild(numEl);
+
+        // sticker zone
+        const zone = document.createElement('div');
+        zone.className = 'sticker-zone';
+
+        if (entry?.url) {
+          const img = document.createElement('img');
+          img.className = 'sticker-photo';
+          img.src = entry.url;
+          img.style.setProperty('--tilt', TILTS[d % TILTS.length]);
+          img.loading = 'lazy';
+          zone.appendChild(img);
+        } else {
+          const hint = document.createElement('div');
+          hint.className = 'add-hint';
+          hint.innerHTML = '<span>+</span>';
+          zone.appendChild(hint);
+        }
+        td.appendChild(zone);
+
+        // note
+        if (entry?.note) {
+          const nl = document.createElement('div');
+          nl.className = 'note-label';
+          nl.textContent = entry.note;
+          td.appendChild(nl);
+        }
+
+        // anniversary dot
+        const anniv = anniversaries.find(a => a.month===(calMonth+1) && a.day===d);
+        if (anniv) {
+          const dot = document.createElement('div');
+          dot.className = 'special-dot';
+          dot.title = anniv.name;
+          td.appendChild(dot);
+        }
+
+        td.addEventListener('click', () => openSheet(d));
+      }
+      tr.appendChild(td);
+    }
+    body.appendChild(tr);
+  }
+}
+
+// ══════════════════════════════════════
+//  MONTH NAV
+// ══════════════════════════════════════
+document.getElementById('prevBtn').addEventListener('click', async () => {
+  calMonth--; if (calMonth < 0) { calMonth=11; calYear--; }
+  renderCal();
+  await preloadMonth(calYear, calMonth);
+  renderCal();
+});
+document.getElementById('nextBtn').addEventListener('click', async () => {
+  calMonth++; if (calMonth > 11) { calMonth=0; calYear++; }
+  renderCal();
+  await preloadMonth(calYear, calMonth);
+  renderCal();
+});
+
+document.querySelectorAll('.cat-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    activeCat = t.dataset.cat;
+    document.querySelectorAll('.cat-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    renderCal();
+  });
+});
+
+// ══════════════════════════════════════
+//  SHEET MODAL
+// ══════════════════════════════════════
+function openSheet(d) {
+  selDay = d; pendingSrc = null;
+  const dow = new Date(calYear, calMonth, d).getDay();
+  document.getElementById('sheetTitle').textContent = `${calMonth+1}月${d}日（${DOW_JP[dow]}）`;
+  const cat = CATS.find(c => c.id === activeCat);
+  document.getElementById('sheetSub').textContent   = `${cat.icon} ${cat.name}記錄`;
+
+  const key   = makeKey(calYear, calMonth, d, activeCat);
+  const entry = cache[key] || null;
+  const area  = document.getElementById('uploadArea');
+
+  if (entry?.url) {
+    area.innerHTML = `<img src="${entry.url}" style="object-fit:contain;">`;
+    document.getElementById('deleteBtn').style.display = 'block';
+  } else {
+    area.innerHTML = `<span class="upload-icon">📷</span><div class="upload-text">點此上傳照片<br>（去背後效果最棒）</div>`;
+    document.getElementById('deleteBtn').style.display = 'none';
+  }
+  area.onclick = () => document.getElementById('fileInput').click();
+  document.getElementById('noteInput').value = entry?.note || '';
+  document.getElementById('fileInput').value = '';
+  document.getElementById('saveBtn').disabled = false;
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closeSheet() {
+  document.getElementById('overlay').classList.remove('show');
+  selDay = null; pendingSrc = null;
+}
+
+document.getElementById('fileInput').addEventListener('change', function() {
+  const file = this.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    pendingSrc = ev.target.result;
+    const area = document.getElementById('uploadArea');
+    area.innerHTML = `<img src="${pendingSrc}" style="object-fit:contain;">`;
+    area.onclick = () => document.getElementById('fileInput').click();
+    document.getElementById('deleteBtn').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('saveBtn').addEventListener('click', async () => {
+  const key   = makeKey(calYear, calMonth, selDay, activeCat);
+  const note  = document.getElementById('noteInput').value.trim();
+  const existing = cache[key];
+
+  if (!pendingSrc && !existing?.url) { closeSheet(); return; }
+
+  const btn = document.getElementById('saveBtn');
+  btn.disabled = true;
+  btn.textContent = '上傳中…';
+
+  if (pendingSrc && window._fb) {
+    showToast('上傳中… ☁️');
+    const result = await window._fb.saveEntry(key, pendingSrc, note);
+    if (result) {
+      cache[key] = result;
+      showToast('已儲存 🌸');
+    } else {
+      // fallback: store base64 locally if firebase fails
+      cache[key] = { url: pendingSrc, note };
+      showToast('已儲存（本機）');
+    }
+  } else if (existing) {
+    // just update note
+    if (window._fb) await window._fb.saveEntry(key, pendingSrc || existing.url, note);
+    cache[key] = { ...existing, note };
+    showToast('備註已更新 ✨');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '儲存';
+  closeSheet();
+  renderCal();
+});
+
+document.getElementById('cancelBtn').addEventListener('click', closeSheet);
+
+document.getElementById('deleteBtn').addEventListener('click', async () => {
+  const key = makeKey(calYear, calMonth, selDay, activeCat);
+  if (window._fb) await window._fb.deleteEntry(key);
+  delete cache[key];
+  closeSheet();
+  renderCal();
+  showToast('已刪除');
+});
+
+document.getElementById('overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeSheet();
+});
+
+// ══════════════════════════════════════
+//  STATS
+// ══════════════════════════════════════
+function renderStats() {
+  statsYear = calYear; statsMonth = calMonth;
+  updateStats();
+}
+function updateStats() {
+  document.getElementById('statsMonthLabel').textContent =
+    `${statsYear}.${String(statsMonth+1).padStart(2,'0')}`;
+  const daysInMonth = new Date(statsYear, statsMonth+1, 0).getDate();
+  const cards = document.getElementById('statCards');
+  cards.innerHTML = '';
+  CATS.forEach(cat => {
+    let count = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      if (cache[makeKey(statsYear, statsMonth, d, cat.id)]?.url) count++;
+    }
+    const pct = Math.round(count / daysInMonth * 100);
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.innerHTML = `
+      <div class="stat-card-top">
+        <div class="stat-cat-name">${cat.icon} ${cat.name}</div>
+        <div class="stat-count">${count}<span> / ${daysInMonth}天</span></div>
+      </div>
+      <div class="stat-bar-bg">
+        <div class="stat-bar-fill c-${cat.id}" style="width:${pct}%"></div>
+      </div>
+      ${count > 0
+        ? `<div class="stat-pct">已記錄 ${pct}% 的日子 ✨</div>`
+        : `<div class="stat-empty">本月還沒有記錄 · 快去拍第一張吧！</div>`}
+    `;
+    cards.appendChild(card);
+  });
+}
+document.getElementById('statsPrevBtn').addEventListener('click', () => {
+  statsMonth--; if (statsMonth < 0) { statsMonth=11; statsYear--; } updateStats();
+});
+document.getElementById('statsNextBtn').addEventListener('click', () => {
+  statsMonth++; if (statsMonth > 11) { statsMonth=0; statsYear++; } updateStats();
+});
+
+// ══════════════════════════════════════
+//  ANNIVERSARIES
+// ══════════════════════════════════════
+function renderAnnivList() {
+  const el = document.getElementById('annivListEl');
+  if (!anniversaries.length) {
+    el.innerHTML = `<div class="anniv-empty">還沒有紀念日 · 點上方新增 🎀</div>`;
+    return;
+  }
+  el.innerHTML = '';
+  [...anniversaries]
+    .sort((a,b) => a.month*100+a.day - (b.month*100+b.day))
+    .forEach(a => {
+      const idx = anniversaries.indexOf(a);
+      const row = document.createElement('div');
+      row.className = 'anniv-item';
+      row.innerHTML = `
+        <div class="anniv-left">
+          <div class="anniv-date">${a.month}/${String(a.day).padStart(2,'0')}</div>
+          <div class="anniv-name">${a.name}</div>
+        </div>
+        <button class="anniv-del" data-idx="${idx}">×</button>
+      `;
+      el.appendChild(row);
+    });
+  el.querySelectorAll('.anniv-del').forEach(btn => {
+    btn.addEventListener('click', () => {
+      anniversaries.splice(parseInt(btn.dataset.idx), 1);
+      persistAnniv(); renderAnnivList(); renderCal();
+    });
+  });
+}
+function toggleAnnivForm() {
+  document.getElementById('annivForm').classList.toggle('show');
+}
+function saveAnniv() {
+  const m    = parseInt(document.getElementById('annivMonth').value);
+  const d    = parseInt(document.getElementById('annivDay').value);
+  const name = document.getElementById('annivName').value.trim();
+  if (!m||!d||!name||m<1||m>12||d<1||d>31) { showToast('請填寫完整資訊'); return; }
+  anniversaries.push({ month:m, day:d, name });
+  persistAnniv();
+  ['annivMonth','annivDay','annivName'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('annivForm').classList.remove('show');
+  renderAnnivList(); renderCal();
+  showToast('紀念日已新增 🎀');
+}
+
+// ══════════════════════════════════════
+//  SETTINGS
+// ══════════════════════════════════════
+function exportJSON() {
+  // export cache metadata (no images, just keys+notes)
+  const meta = {};
+  Object.entries(cache).forEach(([k,v]) => { meta[k] = { note: v.note||'' }; });
+  const blob = new Blob([JSON.stringify(meta,null,2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  const dt   = new Date();
+  a.href     = url;
+  a.download = `kohibi-${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,'0')}${String(dt.getDate()).padStart(2,'0')}.json`;
+  a.click(); URL.revokeObjectURL(url);
+  showToast('備份已下載 💾');
+}
+function importJSON() { document.getElementById('importInput').click(); }
+document.getElementById('importInput').addEventListener('change', function() {
+  const file = this.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      Object.assign(cache, imported);
+      renderCal();
+      showToast('還原成功 ✅');
+    } catch(e) { showToast('檔案格式錯誤 ❌'); }
+  };
+  reader.readAsText(file);
+  this.value = '';
+});
+function printCalendar() {
+  gotoPage('page-cal');
+  setTimeout(() => window.print(), 300);
+}
+
+// ══════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════
+renderCal(); // show empty grid immediately, FB data fills in when ready
+renderAnnivList();
+</script>
+</body>
+</html>
