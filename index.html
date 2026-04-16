@@ -234,26 +234,29 @@ html,body{background:var(--bg);font-family:'Zen Maru Gothic',sans-serif;color:va
 
 .sticker-zone{
   position:absolute;inset:0;
-  display:flex;align-items:flex-end;justify-content:center;
-  padding-bottom:2px;z-index:1;
+  display:flex;align-items:center;justify-content:center;
+  z-index:1;
 }
 .sticker-photo{
-  height:95%;width:auto;max-width:96%;
+  width:90%;height:90%;
   object-fit:contain;
   transform:rotate(var(--tilt,0deg));
-  transform-origin:bottom center;
-  transition:transform 0.2s;
+  transform-origin:center center;
+  transition:transform 0.2s, opacity 0.3s;
   filter:drop-shadow(0 2px 6px rgba(80,60,50,0.18));
+  opacity:0; /* fade in after load */
 }
+.sticker-photo.loaded{opacity:1;}
 .cal-table td:hover .sticker-photo{transform:rotate(0deg) scale(1.05);}
 
-/* loading shimmer on cell */
-.sticker-loading{
-  height:70%;width:60%;
-  background:linear-gradient(90deg,var(--line) 25%,rgba(255,255,255,0.5) 50%,var(--line) 75%);
+/* shimmer while loading */
+.sticker-shimmer{
+  position:absolute;inset:8px;
+  background:linear-gradient(90deg,var(--line) 25%,rgba(255,255,255,0.6) 50%,var(--line) 75%);
   background-size:200% 100%;
-  animation:shimmer 1.2s infinite;
-  border-radius:8px;margin-bottom:4px;
+  animation:shimmer 1.3s infinite;
+  border-radius:10px;
+  z-index:0;
 }
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
 
@@ -804,11 +807,21 @@ function renderCal() {
         zone.className = 'sticker-zone';
 
         if (entry?.url) {
+          // shimmer shown while image loads
+          const shimmer = document.createElement('div');
+          shimmer.className = 'sticker-shimmer';
+          zone.appendChild(shimmer);
+
           const img = document.createElement('img');
           img.className = 'sticker-photo';
           img.src = entry.url;
           img.style.setProperty('--tilt', TILTS[d % TILTS.length]);
           img.loading = 'lazy';
+          img.onload = () => {
+            img.classList.add('loaded');   // fade in
+            shimmer.remove();              // remove shimmer
+          };
+          img.onerror = () => shimmer.remove();
           zone.appendChild(img);
         } else {
           const hint = document.createElement('div');
