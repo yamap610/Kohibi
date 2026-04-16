@@ -1,582 +1,188 @@
 <!DOCTYPE html>
-
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>小日子 | Day's & Moments</title>
-
-<!-- PWA -->
-
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="小日子">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#f7f3ee">
-<meta name="description" content="記錄每一天的美好時光">
-
-<!-- PWA Icons (inline SVG → data URI，不需要額外圖片檔) -->
-
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%23f7f3ee'/%3E%3Ctext x='256' y='320' font-size='260' text-anchor='middle'%3E🌸%3C/text%3E%3Ctext x='256' y='460' font-size='72' text-anchor='middle' font-family='serif' fill='%236b5b4e' letter-spacing='2'%3E小日子%3C/text%3E%3C/svg%3E">
-
-<!-- Inline manifest -->
-
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%23f7f3ee'/%3E%3Ctext x='256' y='330' font-size='280' text-anchor='middle'%3E🌸%3C/text%3E%3C/svg%3E">
 <script>
-const _manifest = {
-  name: "小日子 Day's & Moments",
-  short_name: "小日子",
-  description: "記錄每一天的美好時光",
-  start_url: "./",
-  display: "standalone",
-  background_color: "#f7f3ee",
-  theme_color: "#f7f3ee",
-  orientation: "portrait",
-  icons: [
-    {
-      src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%23f7f3ee'/%3E%3Ctext x='256' y='320' font-size='260' text-anchor='middle'%3E🌸%3C/text%3E%3Ctext x='256' y='460' font-size='72' text-anchor='middle' font-family='serif' fill='%236b5b4e' letter-spacing='2'%3E小日子%3C/text%3E%3C/svg%3E",
-      sizes: "512x512",
-      type: "image/svg+xml",
-      purpose: "any maskable"
-    }
-  ]
-};
-const _blob = new Blob([JSON.stringify(_manifest)], {type:'application/json'});
-const _url  = URL.createObjectURL(_blob);
-const _link = document.createElement('link');
-_link.rel = 'manifest'; _link.href = _url;
-document.currentScript.parentNode.appendChild(_link);
+const _m={name:"小日子 Day's & Moments",short_name:"小日子",start_url:"./",display:"standalone",background_color:"#f7f3ee",theme_color:"#f7f3ee",icons:[{src:"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='115' fill='%23f7f3ee'/%3E%3Ctext x='256' y='330' font-size='280' text-anchor='middle'%3E🌸%3C/text%3E%3C/svg%3E",sizes:"512x512",type:"image/svg+xml"}]};
+const _b=new Blob([JSON.stringify(_m)],{type:'application/json'});
+const _l=document.createElement('link');_l.rel='manifest';_l.href=URL.createObjectURL(_b);document.currentScript.parentNode.appendChild(_l);
 </script>
-
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
-
-<!-- Firebase -->
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyAFGSQOvAp1thZkWBZ-nLHe-uR8llDQDI8",
-  authDomain: "home-hub-be41f.firebaseapp.com",
-  projectId: "home-hub-be41f",
-  storageBucket: "home-hub-be41f.firebasestorage.app",
-  messagingSenderId: "286497032414",
-  appId: "1:286497032414:web:16d3f0242a400d0de85a4f"
-};
-
-const app = initializeApp(firebaseConfig);
-const db  = getFirestore(app);
-
-// ── 圖片壓縮：縮小到最長邊 600px，保留透明背景用 PNG ──
-function compressImage(base64) {
-  return new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => {
-      const MAX = 600;
-      let w = img.width, h = img.height;
-      if (w > MAX || h > MAX) {
-        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
-        else       { w = Math.round(w * MAX / h); h = MAX; }
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      // 不填白底，保留透明
-      ctx.clearRect(0, 0, w, h);
-      ctx.drawImage(img, 0, 0, w, h);
-      // PNG 保留透明，約 100-300KB
-      resolve(canvas.toDataURL('image/png'));
-    };
-    img.src = base64;
-  });
-}
-
-window._fb = {
-  // 壓縮後存進 Firestore（單筆限制 1MB，壓縮後約 80-150KB，OK）
-  async saveEntry(key, base64, note) {
-    try {
-      const compressed = await compressImage(base64);
-      await setDoc(doc(db, 'kohibi', key), { url: compressed, note: note||'' });
-      return { url: compressed, note: note||'' };
-    } catch(e) {
-      console.error('FB save error', e);
-      return null;
-    }
-  },
-
-  async getEntry(key) {
-    try {
-      const snap = await getDoc(doc(db, 'kohibi', key));
-      return snap.exists() ? snap.data() : null;
-    } catch(e) { return null; }
-  },
-
-  async deleteEntry(key) {
-    try {
-      await deleteDoc(doc(db, 'kohibi', key));
-    } catch(e) { console.error('FB delete error', e); }
-  }
-};
-
-window.dispatchEvent(new Event('fb-ready'));
-</script>
-
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 :root{
-  --bg:#f7f3ee;
-  --paper:#faf7f3;
-  --line:#e8e0d6;
-  --sat:#c0836a;
-  --text:#6b5b4e;
-  --light:#b0a090;
-  --accent:#c8a898;
-  --green:#8fa88a;
-  --blue:#8a9bb0;
+  --bg:#f7f3ee;--paper:#faf7f3;--line:#e8e0d6;
+  --sat:#c0836a;--text:#6b5b4e;--light:#b0a090;
+  --accent:#c8a898;--green:#8fa88a;--blue:#8a9bb0;
 }
 html,body{background:var(--bg);font-family:'Zen Maru Gothic',sans-serif;color:var(--text);overflow-x:hidden;}
-
-/* ═══ PAGES ═══ */
 .page{display:none;min-height:100vh;padding-bottom:80px;}
 .page.active{display:block;}
 
-/* ═══ BOTTOM NAV ═══ */
-.bnav{
-  position:fixed;bottom:0;left:0;right:0;
-  background:rgba(250,247,243,0.97);
-  backdrop-filter:blur(14px);
-  border-top:1px solid var(--line);
-  display:flex;justify-content:space-around;
-  padding:8px 0 max(10px,env(safe-area-inset-bottom));
-  z-index:200;
-}
-.bnav-item{
-  display:flex;flex-direction:column;align-items:center;gap:2px;
-  cursor:pointer;
-  font-size:10px;letter-spacing:0.5px;
-  padding:4px 14px;
-  color:rgba(176,160,144,0.45); /* inactive: very faded */
-  transition:color 0.2s;
-}
-.bnav-item .bi{font-size:21px;transition:transform 0.2s;opacity:0.45;}
-.bnav-item span:last-child{opacity:0.45;}
-/* active: full opacity */
+/* NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(250,247,243,0.97);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 0 max(10px,env(safe-area-inset-bottom));z-index:200;}
+.bnav-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:10px;letter-spacing:0.5px;padding:4px 14px;color:rgba(176,160,144,0.4);transition:color 0.2s;}
+.bnav-item .bi{font-size:21px;opacity:0.4;transition:transform 0.2s;}
+.bnav-item span:last-child{opacity:0.4;}
 .bnav-item.active{color:var(--text);}
 .bnav-item.active .bi{transform:scale(1.12);opacity:1;}
 .bnav-item.active span:last-child{opacity:1;}
 
-/* ═══ HEADER ═══ */
-.cal-header{
-  padding:28px 20px 10px;
-  display:flex;align-items:center;justify-content:center;gap:20px;
-  background:var(--bg);position:sticky;top:0;z-index:100;
-}
-.nav-btn{
-  background:none;border:none;font-size:20px;color:var(--light);
-  cursor:pointer;width:36px;height:36px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Cormorant Garamond',serif;transition:all 0.2s;
-}
+/* CAL HEADER */
+.cal-header{padding:28px 20px 10px;display:flex;align-items:center;justify-content:center;gap:20px;background:var(--bg);position:sticky;top:0;z-index:100;}
+.nav-btn{background:none;border:none;font-size:20px;color:var(--light);cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;transition:all 0.2s;}
 .nav-btn:hover{color:var(--text);background:rgba(0,0,0,0.05);}
-.month-display{
-  font-family:'Cormorant Garamond',serif;font-weight:300;
-  font-size:clamp(26px,6vw,40px);letter-spacing:6px;color:var(--text);
-}
+.month-display{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(26px,6vw,40px);letter-spacing:6px;color:var(--text);}
 
-/* ═══ CAT TABS ═══ */
-.cat-tabs{
-  display:flex;justify-content:center;gap:6px;
-  padding:6px 14px 14px;flex-wrap:wrap;
-}
-.cat-tab{
-  padding:5px 14px;border-radius:30px;
-  border:1.5px solid var(--line);background:transparent;
-  font-family:'Zen Maru Gothic',sans-serif;font-size:12px;
-  color:var(--light);cursor:pointer;transition:all 0.2s;
-  display:flex;align-items:center;gap:4px;
-}
+/* TABS */
+.cat-tabs{display:flex;justify-content:center;gap:6px;padding:6px 14px 14px;flex-wrap:wrap;}
+.cat-tab{padding:5px 14px;border-radius:30px;border:1.5px solid var(--line);background:transparent;font-family:'Zen Maru Gothic',sans-serif;font-size:12px;color:var(--light);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:4px;}
 .cat-tab:hover{border-color:var(--accent);color:var(--text);}
 .cat-tab.active{background:var(--text);border-color:var(--text);color:#faf7f3;}
 
-/* ═══ CALENDAR ═══ */
+/* CALENDAR */
 .cal-outer{padding:0 8px 8px;max-width:700px;margin:0 auto;}
 .cal-table{width:100%;border-collapse:collapse;border:1px solid var(--line);background:var(--paper);}
-.weekday-header th{
-  font-family:'Cormorant Garamond',serif;font-weight:400;
-  font-size:clamp(8px,1.8vw,11px);letter-spacing:2px;color:var(--light);
-  padding:9px 0 7px;text-align:center;border-bottom:1px solid var(--line);
-  width:calc(100%/7);
-}
+.weekday-header th{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(8px,1.8vw,11px);letter-spacing:2px;color:var(--light);padding:9px 0 7px;text-align:center;border-bottom:1px solid var(--line);width:calc(100%/7);}
 .weekday-header th.sat,.weekday-header th.sun{color:var(--sat);}
-
-.cal-table td{
-  border:1px solid var(--line);vertical-align:top;padding:0;
-  height:clamp(82px,19vw,145px);width:calc(100%/7);
-  position:relative;cursor:pointer;overflow:hidden;transition:background 0.15s;
-}
+.cal-table td{border:1px solid var(--line);vertical-align:top;padding:0;height:clamp(82px,19vw,145px);width:calc(100%/7);position:relative;cursor:pointer;overflow:hidden;transition:background 0.15s;}
 .cal-table td:hover{background:rgba(200,168,152,0.07);}
 .cal-table td.empty{cursor:default;background:rgba(0,0,0,0.01);}
 .cal-table td.today{background:rgba(200,168,152,0.1);}
-
-.day-num{
-  position:absolute;top:5px;left:6px;
-  font-family:'Cormorant Garamond',serif;font-weight:400;
-  font-size:clamp(10px,1.9vw,13px);color:var(--text);
-  line-height:1;z-index:3;transition:opacity 0.2s;
-}
+.day-num{position:absolute;top:5px;left:6px;font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(10px,1.9vw,13px);color:var(--text);line-height:1;z-index:3;transition:opacity 0.2s;}
 .day-num.sat,.day-num.sun{color:var(--sat);}
-.day-num.today-num{
-  background:var(--sat);color:white;
-  width:19px;height:19px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;font-size:9px;
-}
+.day-num.today-num{background:var(--sat);color:white;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;}
 .has-photo .day-num{opacity:0;}
-
-.sticker-zone{
-  position:absolute;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  z-index:1;
-}
-.sticker-photo{
-  width:90%;height:90%;
-  object-fit:contain;
-  transform:rotate(var(--tilt,0deg));
-  transform-origin:center center;
-  transition:transform 0.2s, opacity 0.3s;
-  filter:drop-shadow(0 2px 6px rgba(80,60,50,0.18));
-  opacity:0; /* fade in after load */
-}
+.sticker-zone{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:1;}
+.sticker-photo{width:90%;height:90%;object-fit:contain;transform:rotate(var(--tilt,0deg));transform-origin:center;transition:transform 0.2s,opacity 0.3s;filter:drop-shadow(0 2px 6px rgba(80,60,50,0.18));opacity:0;}
 .sticker-photo.loaded{opacity:1;}
 .cal-table td:hover .sticker-photo{transform:rotate(0deg) scale(1.05);}
-
-/* shimmer while loading */
-.sticker-shimmer{
-  position:absolute;inset:8px;
-  background:linear-gradient(90deg,var(--line) 25%,rgba(255,255,255,0.6) 50%,var(--line) 75%);
-  background-size:200% 100%;
-  animation:shimmer 1.3s infinite;
-  border-radius:10px;
-  z-index:0;
-}
+.sticker-shimmer{position:absolute;inset:8px;background:linear-gradient(90deg,var(--line) 25%,rgba(255,255,255,0.6) 50%,var(--line) 75%);background-size:200% 100%;animation:shimmer 1.3s infinite;border-radius:10px;}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-
-.note-label{
-  position:absolute;bottom:3px;left:2px;right:2px;
-  font-size:clamp(6px,1.2vw,8px);color:var(--light);
-  text-align:center;line-height:1.2;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  z-index:4;pointer-events:none;
-}
+.note-label{position:absolute;bottom:3px;left:2px;right:2px;font-size:clamp(6px,1.2vw,8px);color:var(--light);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:4;pointer-events:none;}
 .has-photo .note-label{color:rgba(255,255,255,0.9);text-shadow:0 1px 3px rgba(0,0,0,0.35);}
-
-.add-hint{
-  position:absolute;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  opacity:0;transition:opacity 0.2s;
-}
+.add-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;}
 .cal-table td:hover .add-hint{opacity:1;}
-.add-hint span{
-  width:24px;height:24px;border-radius:50%;
-  border:1.5px dashed var(--accent);
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;color:var(--accent);background:rgba(250,247,243,0.85);
-}
+.add-hint span{width:24px;height:24px;border-radius:50%;border:1.5px dashed var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--accent);background:rgba(250,247,243,0.85);}
+.special-dot{position:absolute;bottom:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--sat);z-index:5;box-shadow:0 0 0 1.5px white;}
 
-/* special dot */
-.special-dot{
-  position:absolute;bottom:3px;right:3px;
-  width:6px;height:6px;border-radius:50%;
-  background:var(--sat);z-index:5;box-shadow:0 0 0 1.5px white;
-}
+/* FOOTER */
+.footer-deco{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 10px;max-width:700px;margin:0 auto;}
+.footer-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:14px;letter-spacing:3px;color:var(--light);}
+#page-cal{padding-bottom:72px;}
 
-/* ═══ FOOTER ═══ */
-.footer-deco{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:10px 18px 10px;max-width:700px;margin:0 auto;
-}
-.footer-title{
-  font-family:'Cormorant Garamond',serif;font-weight:300;
-  font-size:14px;letter-spacing:3px;color:var(--light);
-}
-/* tight padding so footer sits right above nav */
-#page-cal{ padding-bottom:72px; }
-
-/* ═══ SHEET OVERLAY ═══ */
-.overlay{
-  position:fixed;inset:0;background:rgba(80,60,50,0.28);
-  backdrop-filter:blur(8px);z-index:400;
-  display:flex;align-items:flex-end;justify-content:center;
-  opacity:0;pointer-events:none;transition:opacity 0.3s;
-}
+/* SHEET */
+.overlay{position:fixed;inset:0;background:rgba(80,60,50,0.28);backdrop-filter:blur(8px);z-index:400;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;}
 .overlay.show{opacity:1;pointer-events:all;}
-.sheet{
-  background:var(--paper);border-radius:24px 24px 0 0;
-  padding:18px 20px 36px;width:100%;max-width:520px;
-  transform:translateY(100%);
-  transition:transform 0.35s cubic-bezier(0.34,1.4,0.64,1);
-  max-height:92vh;overflow-y:auto;
-}
+.sheet{background:var(--paper);border-radius:24px 24px 0 0;padding:18px 20px 36px;width:100%;max-width:520px;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.34,1.4,0.64,1);max-height:92vh;overflow-y:auto;}
 .overlay.show .sheet{transform:translateY(0);}
 .sheet-handle{width:34px;height:3px;background:var(--line);border-radius:2px;margin:0 auto 16px;}
-.sheet-title{
-  font-family:'Cormorant Garamond',serif;font-size:19px;
-  letter-spacing:3px;color:var(--text);text-align:center;margin-bottom:3px;
-}
+.sheet-title{font-family:'Cormorant Garamond',serif;font-size:19px;letter-spacing:3px;color:var(--text);text-align:center;margin-bottom:3px;}
 .sheet-sub{text-align:center;font-size:11px;color:var(--light);margin-bottom:14px;}
-
-.upload-area{
-  width:150px;aspect-ratio:3/4;margin:0 auto 14px;
-  border:2px dashed var(--line);border-radius:14px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  gap:6px;cursor:pointer;background:rgba(0,0,0,0.01);overflow:hidden;
-  transition:border-color 0.2s;
-}
+.upload-area{width:150px;aspect-ratio:3/4;margin:0 auto 14px;border:2px dashed var(--line);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;overflow:hidden;transition:border-color 0.2s;}
 .upload-area:hover{border-color:var(--accent);}
 .upload-area img{width:100%;height:100%;object-fit:contain;}
 .upload-icon{font-size:26px;opacity:0.4;}
 .upload-text{font-size:10px;color:var(--light);text-align:center;line-height:1.6;}
 input[type=file]{display:none;}
-
-/* ═══ CROP MODAL ═══ */
-.crop-overlay{
-  position:fixed;inset:0;background:rgba(30,20,15,0.85);
-  z-index:600;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:16px;
-  opacity:0;pointer-events:none;transition:opacity 0.25s;
-}
-.crop-overlay.show{opacity:1;pointer-events:all;}
-.crop-title{
-  font-family:'Cormorant Garamond',serif;font-size:18px;
-  letter-spacing:3px;color:rgba(255,255,255,0.85);
-}
-.crop-hint{font-size:11px;color:rgba(255,255,255,0.45);letter-spacing:1px;}
-.crop-container{
-  position:relative;
-  width:min(80vw,320px);height:min(80vw,320px);
-  overflow:hidden;cursor:grab;touch-action:none;
-  border:2px solid rgba(255,255,255,0.2);
-  border-radius:12px;
-}
-.crop-container:active{cursor:grabbing;}
-.crop-img{
-  position:absolute;
-  transform-origin:0 0;
-  user-select:none;pointer-events:none;
-}
-/* crosshair guide lines */
-.crop-guide{
-  position:absolute;inset:0;pointer-events:none;
-  background:
-    linear-gradient(rgba(255,255,255,0.15) 1px,transparent 1px) 0 33.3%/100% 33.3%,
-    linear-gradient(90deg,rgba(255,255,255,0.15) 1px,transparent 1px) 33.3% 0/33.3% 100%;
-  border-radius:10px;
-}
-.crop-btns{display:flex;gap:12px;}
-.btn-crop-cancel{
-  padding:12px 24px;border-radius:30px;
-  border:1.5px solid rgba(255,255,255,0.3);background:transparent;
-  font-family:'Zen Maru Gothic',sans-serif;font-size:13px;
-  color:rgba(255,255,255,0.7);cursor:pointer;
-}
-.btn-crop-ok{
-  padding:12px 32px;border-radius:30px;border:none;
-  background:var(--accent);color:white;
-  font-family:'Zen Maru Gothic',sans-serif;font-size:13px;font-weight:500;cursor:pointer;
-}
-
 .note-row{margin-bottom:14px;}
 .note-row label{font-size:11px;color:var(--light);display:block;margin-bottom:5px;letter-spacing:1px;}
-.note-input{
-  width:100%;padding:9px 12px;border-radius:10px;
-  border:1.5px solid var(--line);background:rgba(255,255,255,0.6);
-  font-family:'Zen Maru Gothic',sans-serif;font-size:13px;color:var(--text);
-  outline:none;transition:border-color 0.2s;
-}
+.note-input{width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid var(--line);background:rgba(255,255,255,0.6);font-family:'Zen Maru Gothic',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color 0.2s;}
 .note-input:focus{border-color:var(--accent);}
-
-.tip-box{
-  background:rgba(200,168,152,0.08);border-radius:10px;
-  padding:9px 12px;font-size:10px;color:var(--light);
-  text-align:center;margin-bottom:14px;line-height:1.7;
-}
+.tip-box{background:rgba(200,168,152,0.08);border-radius:10px;padding:9px 12px;font-size:10px;color:var(--light);text-align:center;margin-bottom:14px;line-height:1.7;}
 .tip-box a{color:var(--accent);text-decoration:none;}
 .sheet-btns{display:flex;gap:8px;}
-.btn-cancel{
-  flex:1;padding:12px;border-radius:40px;
-  border:1.5px solid var(--line);background:none;
-  font-family:'Zen Maru Gothic',sans-serif;font-size:13px;color:var(--light);cursor:pointer;
-}
-.btn-save{
-  flex:2;padding:12px;border-radius:40px;border:none;
-  background:var(--text);font-family:'Zen Maru Gothic',sans-serif;
-  font-size:13px;color:#faf7f3;font-weight:500;cursor:pointer;
-  letter-spacing:1px;transition:opacity 0.2s;
-}
+.btn-cancel{flex:1;padding:12px;border-radius:40px;border:1.5px solid var(--line);background:none;font-family:'Zen Maru Gothic',sans-serif;font-size:13px;color:var(--light);cursor:pointer;}
+.btn-save{flex:2;padding:12px;border-radius:40px;border:none;background:var(--text);font-family:'Zen Maru Gothic',sans-serif;font-size:13px;color:#faf7f3;font-weight:500;cursor:pointer;letter-spacing:1px;transition:opacity 0.2s;}
 .btn-save:hover{opacity:0.85;}
-.btn-save:disabled{opacity:0.5;cursor:wait;}
-.btn-delete{
-  display:block;margin:0 auto 10px;background:none;border:none;
-  font-size:11px;color:#c4836a;cursor:pointer;letter-spacing:1px;
-  text-decoration:underline;font-family:'Zen Maru Gothic',sans-serif;
-}
+.btn-delete{display:block;margin:0 auto 10px;background:none;border:none;font-size:11px;color:#c4836a;cursor:pointer;letter-spacing:1px;text-decoration:underline;font-family:'Zen Maru Gothic',sans-serif;}
 
-/* ═══ STATS PAGE ═══ */
-.stats-header{
-  padding:32px 20px 8px;
-  font-family:'Cormorant Garamond',serif;font-weight:300;
-  font-size:28px;letter-spacing:4px;color:var(--text);text-align:center;
-}
+/* STATS */
+.stats-header{padding:32px 20px 8px;font-family:'Cormorant Garamond',serif;font-weight:300;font-size:28px;letter-spacing:4px;color:var(--text);text-align:center;}
 .stats-nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:8px 0 20px;}
 .stats-month-label{font-family:'Cormorant Garamond',serif;font-size:18px;letter-spacing:3px;color:var(--text);}
 .stat-cards{display:flex;flex-direction:column;gap:14px;padding:0 16px 16px;max-width:500px;margin:0 auto;}
-.stat-card{
-  background:var(--paper);border-radius:16px;
-  border:1px solid var(--line);padding:14px 16px;
-}
+.stat-card{background:var(--paper);border-radius:16px;border:1px solid var(--line);padding:14px 16px;}
 .stat-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .stat-cat-name{font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;}
 .stat-count{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--text);}
 .stat-count span{font-size:12px;color:var(--light);font-family:'Zen Maru Gothic',sans-serif;}
 .stat-bar-bg{height:6px;background:var(--line);border-radius:3px;overflow:hidden;}
 .stat-bar-fill{height:100%;border-radius:3px;transition:width 0.7s ease;background:var(--accent);}
-.stat-bar-fill.c-food{background:#c9a87c;}
-.stat-bar-fill.c-drink{background:var(--blue);}
-.stat-bar-fill.c-life{background:var(--green);}
+.stat-bar-fill.c-food{background:#c9a87c;}.stat-bar-fill.c-drink{background:var(--blue);}.stat-bar-fill.c-life{background:var(--green);}
 .stat-pct{font-size:11px;color:var(--light);margin-top:8px;letter-spacing:1px;}
 .stat-empty{font-size:11px;color:var(--light);text-align:center;padding:14px;letter-spacing:1px;}
 
-/* ═══ SETTINGS PAGE ═══ */
-.settings-header{
-  padding:32px 20px 16px;
-  font-family:'Cormorant Garamond',serif;font-weight:300;
-  font-size:28px;letter-spacing:4px;color:var(--text);text-align:center;
-}
+/* SETTINGS */
+.settings-header{padding:32px 20px 16px;font-family:'Cormorant Garamond',serif;font-weight:300;font-size:28px;letter-spacing:4px;color:var(--text);text-align:center;}
 .settings-section{max-width:500px;margin:0 auto 20px;padding:0 16px;}
-.settings-section-title{
-  font-size:10px;letter-spacing:2px;color:var(--light);
-  padding:0 4px 8px;border-bottom:1px solid var(--line);margin-bottom:2px;
-}
-.settings-row{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 4px;border-bottom:1px solid rgba(232,224,214,0.5);
-  cursor:pointer;transition:opacity 0.2s;
-}
-.settings-row:hover{opacity:0.7;}
-.settings-row:last-child{border-bottom:none;}
+.settings-section-title{font-size:10px;letter-spacing:2px;color:var(--light);padding:0 4px 8px;border-bottom:1px solid var(--line);margin-bottom:2px;}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 4px;border-bottom:1px solid rgba(232,224,214,0.5);cursor:pointer;transition:opacity 0.2s;}
+.settings-row:hover{opacity:0.7;}.settings-row:last-child{border-bottom:none;}
 .settings-row-left{display:flex;align-items:center;gap:12px;}
 .settings-icon{font-size:20px;width:28px;text-align:center;}
 .settings-label{font-size:14px;color:var(--text);}
 .settings-desc{font-size:10px;color:var(--light);margin-top:2px;}
 .settings-arrow{font-size:14px;color:var(--line);}
 .settings-footer{text-align:center;padding:20px;font-size:11px;color:var(--light);letter-spacing:1px;}
-
-/* sync status badge */
-.sync-badge{
-  font-size:10px;padding:2px 8px;border-radius:10px;
-  background:rgba(143,168,138,0.2);color:var(--green);letter-spacing:0.5px;
-}
+.sync-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(143,168,138,0.2);color:var(--green);letter-spacing:0.5px;}
 .sync-badge.err{background:rgba(192,131,106,0.15);color:var(--sat);}
 
-/* ═══ ANNIVERSARY PAGE ═══ */
+/* ANNIVERSARY */
 .anniv-list{max-width:500px;margin:0 auto;padding:0 16px 16px;}
-.anniv-item{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:12px 4px;border-bottom:1px solid rgba(232,224,214,0.5);
-}
+.anniv-item{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid rgba(232,224,214,0.5);}
 .anniv-item:last-child{border-bottom:none;}
 .anniv-left{display:flex;align-items:center;gap:10px;}
 .anniv-date{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--sat);letter-spacing:1px;min-width:54px;}
 .anniv-name{font-size:13px;color:var(--text);}
 .anniv-del{background:none;border:none;font-size:16px;color:var(--line);cursor:pointer;padding:4px;}
 .anniv-del:hover{color:var(--sat);}
-.add-anniv-row{
-  display:flex;align-items:center;gap:8px;
-  padding:12px 4px;font-size:13px;color:var(--accent);cursor:pointer;
-}
-.anniv-form{
-  background:rgba(200,168,152,0.08);border-radius:12px;
-  padding:14px;margin-bottom:14px;display:none;
-}
+.add-anniv-row{display:flex;align-items:center;gap:8px;padding:12px 4px;font-size:13px;color:var(--accent);cursor:pointer;}
+.anniv-form{background:rgba(200,168,152,0.08);border-radius:12px;padding:14px;margin-bottom:14px;display:none;}
 .anniv-form.show{display:block;}
 .anniv-form-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
-.anniv-input{
-  flex:1;min-width:80px;padding:8px 10px;border-radius:8px;
-  border:1.5px solid var(--line);background:white;
-  font-family:'Zen Maru Gothic',sans-serif;font-size:12px;color:var(--text);outline:none;
-}
+.anniv-input{flex:1;min-width:80px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--line);background:white;font-family:'Zen Maru Gothic',sans-serif;font-size:12px;color:var(--text);outline:none;}
 .anniv-input:focus{border-color:var(--accent);}
-.btn-anniv-save{
-  padding:8px 16px;border-radius:20px;border:none;
-  background:var(--text);color:#faf7f3;
-  font-family:'Zen Maru Gothic',sans-serif;font-size:12px;cursor:pointer;
-}
+.btn-anniv-save{padding:8px 16px;border-radius:20px;border:none;background:var(--text);color:#faf7f3;font-family:'Zen Maru Gothic',sans-serif;font-size:12px;cursor:pointer;}
 .anniv-empty{font-size:12px;color:var(--light);text-align:center;padding:20px;letter-spacing:1px;}
 
-/* ═══ CROP MODAL ═══ */
-.crop-overlay{
-  position:fixed;inset:0;background:rgba(30,20,15,0.92);
-  z-index:600;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:14px;
-  opacity:0;pointer-events:none;transition:opacity 0.3s;
-}
+/* CROP */
+.crop-overlay{position:fixed;inset:0;background:rgba(20,12,8,0.93);z-index:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:0;pointer-events:none;transition:opacity 0.3s;}
 .crop-overlay.show{opacity:1;pointer-events:all;}
-.crop-title{font-size:13px;color:rgba(255,255,255,0.7);letter-spacing:2px;}
-.crop-canvas-wrap{
-  position:relative;
-  /* calendar cell is roughly portrait ~3:4 ratio */
-  width:min(75vw,320px);
-  height:min(100vw,426px);
-  overflow:hidden;border-radius:6px;
-  touch-action:none;
-  background:#111;
-}
-#cropCanvas{
-  display:block;
-  width:100%;height:100%;
-  touch-action:none;
-}
-.crop-guide-line{
-  position:absolute;inset:0;
-  border:2px solid rgba(255,255,255,0.5);
-  border-radius:4px;pointer-events:none;
-}
+.crop-title{font-size:13px;color:rgba(255,255,255,0.65);letter-spacing:2px;}
+.crop-wrap{position:relative;width:min(76vw,320px);height:min(101vw,426px);overflow:hidden;border-radius:6px;touch-action:none;background:#000;}
+#cropCanvas{display:block;position:absolute;top:0;left:0;touch-action:none;}
+.crop-guide-box{position:absolute;inset:0;border:2px solid rgba(255,255,255,0.5);border-radius:4px;pointer-events:none;}
 .crop-btns{display:flex;gap:10px;}
-.btn-crop-cancel{
-  padding:11px 24px;border-radius:30px;
-  border:1.5px solid rgba(255,255,255,0.3);background:transparent;
-  color:rgba(255,255,255,0.6);font-family:'Zen Maru Gothic',sans-serif;
-  font-size:13px;cursor:pointer;
-}
-.btn-crop-ok{
-  padding:11px 32px;border-radius:30px;border:none;
-  background:var(--accent);color:white;
-  font-family:'Zen Maru Gothic',sans-serif;font-size:13px;cursor:pointer;
-}
+.btn-crop-cancel{padding:11px 24px;border-radius:30px;border:1.5px solid rgba(255,255,255,0.3);background:transparent;color:rgba(255,255,255,0.6);font-family:'Zen Maru Gothic',sans-serif;font-size:13px;cursor:pointer;}
+.btn-crop-ok{padding:11px 32px;border-radius:30px;border:none;background:var(--accent);color:white;font-family:'Zen Maru Gothic',sans-serif;font-size:13px;cursor:pointer;}
+
+/* TOAST */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#faf7f3;padding:10px 20px;border-radius:30px;font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:500;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
 @media print{
-  .bnav,.cat-tabs,.cal-header .nav-btn,.overlay,.page:not(#page-cal){display:none!important;}
+  .bnav,.cat-tabs,.cal-header .nav-btn,.overlay,.crop-overlay,.page:not(#page-cal){display:none!important;}
   .page#page-cal{display:block!important;padding-bottom:0;}
   body{background:white;}
   .cal-outer{padding:0;}
-  .cal-header{position:static;padding:16px 20px 8px;}
-  .cal-table td{height:120px;}
+  .cal-header{position:static;}
+  .cal-table td{height:110px;}
   .day-num{opacity:1!important;}
 }
-
-/* ═══ TOAST ═══ */
-.toast{
-  position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);
-  background:var(--text);color:#faf7f3;
-  padding:10px 20px;border-radius:30px;font-size:13px;
-  opacity:0;transition:all 0.3s;pointer-events:none;z-index:500;white-space:nowrap;
-}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 </style>
-
 </head>
 <body>
 
-<!-- ═══ CALENDAR PAGE ═══ -->
-
+<!-- CALENDAR -->
 <div class="page active" id="page-cal">
   <div class="cal-header">
     <button class="nav-btn" id="prevBtn">＜</button>
@@ -597,12 +203,11 @@ input[type=file]{display:none;}
   </div>
   <div class="footer-deco">
     <div class="footer-title">小日子 | Day's &amp; Moments</div>
-    <div style="font-size:30px;opacity:0.55">🌸🍵</div>
+    <div style="font-size:28px;opacity:0.5">🌸🍵</div>
   </div>
 </div>
 
-<!-- ═══ STATS PAGE ═══ -->
-
+<!-- STATS -->
 <div class="page" id="page-stats">
   <div class="stats-header">本月記錄</div>
   <div class="stats-nav">
@@ -613,8 +218,7 @@ input[type=file]{display:none;}
   <div class="stat-cards" id="statCards"></div>
 </div>
 
-<!-- ═══ ANNIVERSARY PAGE ═══ -->
-
+<!-- ANNIVERSARY -->
 <div class="page" id="page-anniv">
   <div class="settings-header">紀念日 🎀</div>
   <div class="anniv-list">
@@ -622,131 +226,83 @@ input[type=file]{display:none;}
       <div class="anniv-form-row">
         <input class="anniv-input" id="annivMonth" type="number" min="1" max="12" placeholder="月">
         <input class="anniv-input" id="annivDay"   type="number" min="1" max="31" placeholder="日">
-        <input class="anniv-input" id="annivName"  type="text" placeholder="名稱 例：寶貝生日🎂" maxlength="12">
+        <input class="anniv-input" id="annivName"  type="text"   placeholder="名稱 例：寶貝生日🎂" maxlength="12">
       </div>
-      <button class="btn-anniv-save" onclick="saveAnniv()">新增</button>
+      <button class="btn-anniv-save" id="annivSaveBtn">新增</button>
     </div>
-    <div class="add-anniv-row" onclick="toggleAnnivForm()">
-      <span>＋</span><span>新增紀念日</span>
-    </div>
+    <div class="add-anniv-row" id="addAnnivRow"><span>＋</span><span>新增紀念日</span></div>
     <div id="annivListEl"></div>
   </div>
 </div>
 
-<!-- ═══ SETTINGS PAGE ═══ -->
-
+<!-- SETTINGS -->
 <div class="page" id="page-settings">
   <div class="settings-header">設定</div>
-
   <div class="settings-section">
     <div class="settings-section-title">雲端同步</div>
     <div class="settings-row" style="cursor:default;">
       <div class="settings-row-left">
         <span class="settings-icon">☁️</span>
-        <div>
-          <div class="settings-label">Firebase 自動同步</div>
-          <div class="settings-desc">照片壓縮後存於 Firestore，免費方案</div>
-        </div>
+        <div><div class="settings-label">Firebase 自動同步</div><div class="settings-desc">照片壓縮後存於 Firestore，免費方案</div></div>
       </div>
       <span class="sync-badge" id="syncBadge">連線中…</span>
     </div>
   </div>
-
   <div class="settings-section">
     <div class="settings-section-title">備份與匯出</div>
-    <div class="settings-row" onclick="exportJSON()">
-      <div class="settings-row-left">
-        <span class="settings-icon">💾</span>
-        <div>
-          <div class="settings-label">備份所有資料</div>
-          <div class="settings-desc">匯出 .json 紀錄檔（不含圖片）</div>
-        </div>
-      </div>
+    <div class="settings-row" id="btnExportJSON">
+      <div class="settings-row-left"><span class="settings-icon">💾</span><div><div class="settings-label">備份所有資料</div><div class="settings-desc">匯出 .json 紀錄檔</div></div></div>
       <span class="settings-arrow">›</span>
     </div>
-    <div class="settings-row" onclick="importJSON()">
-      <div class="settings-row-left">
-        <span class="settings-icon">📥</span>
-        <div>
-          <div class="settings-label">從備份還原</div>
-          <div class="settings-desc">載入之前匯出的 .json 檔案</div>
-        </div>
-      </div>
+    <div class="settings-row" id="btnImportJSON">
+      <div class="settings-row-left"><span class="settings-icon">📥</span><div><div class="settings-label">從備份還原</div><div class="settings-desc">載入 .json 檔案</div></div></div>
       <span class="settings-arrow">›</span>
     </div>
-    <div class="settings-row" onclick="exportMonthPNG()">
-      <div class="settings-row-left">
-        <span class="settings-icon">🖼️</span>
-        <div>
-          <div class="settings-label">匯出本月 PNG</div>
-          <div class="settings-desc">月曆原比例，適合傳給家人</div>
-        </div>
-      </div>
+    <div class="settings-row" id="btnExportPNG">
+      <div class="settings-row-left"><span class="settings-icon">🖼️</span><div><div class="settings-label">匯出本月 PNG</div><div class="settings-desc">月曆原比例，適合傳給家人</div></div></div>
       <span class="settings-arrow">›</span>
     </div>
-    <div class="settings-row" onclick="exportSquarePNG()">
-      <div class="settings-row-left">
-        <span class="settings-icon">📱</span>
-        <div>
-          <div class="settings-label">匯出限時動態版</div>
-          <div class="settings-desc">9:16 比例，適合 IG / Line 限動</div>
-        </div>
-      </div>
+    <div class="settings-row" id="btnExportStories">
+      <div class="settings-row-left"><span class="settings-icon">📱</span><div><div class="settings-label">匯出限時動態版</div><div class="settings-desc">9:16 比例，適合 IG / Line 限動</div></div></div>
       <span class="settings-arrow">›</span>
     </div>
-    <div class="settings-row" onclick="exportMonthPDF()">
-      <div class="settings-row-left">
-        <span class="settings-icon">🖨️</span>
-        <div>
-          <div class="settings-label">匯出 PDF</div>
-          <div class="settings-desc">A4 直式，下載後可列印</div>
-        </div>
-      </div>
+    <div class="settings-row" id="btnExportPDF">
+      <div class="settings-row-left"><span class="settings-icon">🖨️</span><div><div class="settings-label">匯出 PDF</div><div class="settings-desc">A4 直式，下載後可列印</div></div></div>
       <span class="settings-arrow">›</span>
     </div>
   </div>
-
   <div class="settings-section">
     <div class="settings-section-title">關於</div>
     <div class="settings-row" style="cursor:default;">
-      <div class="settings-row-left">
-        <span class="settings-icon">🌸</span>
-        <div>
-          <div class="settings-label">小日子 Day's & Moments</div>
-          <div class="settings-desc">記錄每一天的美好時光</div>
-        </div>
-      </div>
+      <div class="settings-row-left"><span class="settings-icon">🌸</span><div><div class="settings-label">小日子 Day's & Moments</div><div class="settings-desc">記錄每一天的美好時光</div></div></div>
     </div>
   </div>
   <div class="settings-footer">照片壓縮後存於 Firestore · 免費方案 · 請定期備份</div>
 </div>
 
-<!-- ═══ CROP MODAL ═══ -->
-
+<!-- CROP -->
 <div class="crop-overlay" id="cropOverlay">
   <div class="crop-title">拖曳移動 · 捏合縮放</div>
-  <div class="crop-canvas-wrap" id="cropWrap">
+  <div class="crop-wrap" id="cropWrap">
     <canvas id="cropCanvas"></canvas>
-    <div class="crop-guide-line"></div>
+    <div class="crop-guide-box"></div>
   </div>
   <div class="crop-btns">
     <button class="btn-crop-cancel" id="cropCancel">取消</button>
-    <button class="btn-crop-ok"     id="cropOk">完成 ✂️</button>
+    <button class="btn-crop-ok" id="cropOk">完成 ✂️</button>
   </div>
 </div>
 
-<!-- file inputs -->
-
+<!-- INPUTS -->
 <input type="file" id="fileInput"   accept="image/*" style="display:none">
 <input type="file" id="importInput" accept=".json"   style="display:none">
 
-<!-- ═══ SHEET MODAL ═══ -->
-
+<!-- SHEET -->
 <div class="overlay" id="overlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
-    <div class="sheet-title" id="sheetTitle">4月15日</div>
-    <div class="sheet-sub"   id="sheetSub">👗 穿搭記錄</div>
+    <div class="sheet-title" id="sheetTitle"></div>
+    <div class="sheet-sub"   id="sheetSub"></div>
     <div class="upload-area" id="uploadArea">
       <span class="upload-icon">📷</span>
       <div class="upload-text">點此上傳照片<br>（去背後效果最棒）</div>
@@ -755,9 +311,7 @@ input[type=file]{display:none;}
       <label>📝 備註（選填）</label>
       <input class="note-input" id="noteInput" type="text" placeholder="例：媽媽買的新裙子 🎀" maxlength="20">
     </div>
-    <div class="tip-box">
-      💡 <a href="https://www.remove.bg/zh" target="_blank">remove.bg</a> 免費去背 → 貼紙效果超美 ✨
-    </div>
+    <div class="tip-box">💡 <a href="https://www.remove.bg/zh" target="_blank">remove.bg</a> 免費去背 → 貼紙效果超美 ✨</div>
     <button class="btn-delete" id="deleteBtn" style="display:none">刪除這張照片</button>
     <div class="sheet-btns">
       <button class="btn-cancel" id="cancelBtn">取消</button>
@@ -766,211 +320,193 @@ input[type=file]{display:none;}
   </div>
 </div>
 
-<!-- ═══ BOTTOM NAV ═══ -->
-
+<!-- BOTTOM NAV -->
 <nav class="bnav">
-  <div class="bnav-item active" data-page="page-cal">
-    <span class="bi">📅</span><span>日曆</span>
-  </div>
-  <div class="bnav-item" data-page="page-stats">
-    <span class="bi">📊</span><span>統計</span>
-  </div>
-  <div class="bnav-item" data-page="page-anniv">
-    <span class="bi">🎀</span><span>紀念日</span>
-  </div>
-  <div class="bnav-item" data-page="page-settings">
-    <span class="bi">⚙️</span><span>設定</span>
-  </div>
+  <div class="bnav-item active" data-page="page-cal"><span class="bi">📅</span><span>日曆</span></div>
+  <div class="bnav-item" data-page="page-stats"><span class="bi">📊</span><span>統計</span></div>
+  <div class="bnav-item" data-page="page-anniv"><span class="bi">🎀</span><span>紀念日</span></div>
+  <div class="bnav-item" data-page="page-settings"><span class="bi">⚙️</span><span>設定</span></div>
 </nav>
-
 <div class="toast" id="toast"></div>
 
 <script>
-// ══════════════════════════════════════
-//  CONSTANTS
-// ══════════════════════════════════════
-const WD       = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
-const WD_CLS   = ['','','','','','sat','sun'];
-const DOW_JP   = ['日','一','二','三','四','五','六'];
-const MONTHS   = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-const TILTS    = ['-2.5deg','1.8deg','-1.2deg','2.2deg','0deg','-1.8deg','1.5deg','-0.8deg'];
-const CATS = [
+// ══════════════════════════════════════════════════════
+//  全部放在一個 script，不用 module，避免跨邊界問題
+// ══════════════════════════════════════════════════════
+
+// ── Firebase (用動態 import) ──
+let _db = null;
+(async () => {
+  try {
+    const { initializeApp }   = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+    const { getFirestore, doc, setDoc, getDoc, deleteDoc } =
+      await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+    const app = initializeApp({
+      apiKey:"AIzaSyAFGSQOvAp1thZkWBZ-nLHe-uR8llDQDI8",
+      authDomain:"home-hub-be41f.firebaseapp.com",
+      projectId:"home-hub-be41f",
+      storageBucket:"home-hub-be41f.firebasestorage.app",
+      messagingSenderId:"286497032414",
+      appId:"1:286497032414:web:16d3f0242a400d0de85a4f"
+    });
+    _db = getFirestore(app);
+    _fbDoc  = (key) => doc(_db, 'kohibi', key);
+    _fbSet  = setDoc;
+    _fbGet  = getDoc;
+    _fbDel  = deleteDoc;
+    document.getElementById('syncBadge').textContent = '已連線 ✓';
+    await preloadMonth(calYear, calMonth);
+    renderCal();
+  } catch(e) {
+    console.warn('Firebase init failed', e);
+    document.getElementById('syncBadge').textContent = '離線模式';
+    document.getElementById('syncBadge').classList.add('err');
+  }
+})();
+
+let _fbDoc, _fbSet, _fbGet, _fbDel;
+
+// ── 圖片壓縮 (保留透明, PNG, 最長邊 600px) ──
+function compressImg(base64) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 600;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h*MAX/w); w = MAX; }
+        else       { w = Math.round(w*MAX/h); h = MAX; }
+      }
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0,0,w,h);
+      ctx.drawImage(img,0,0,w,h);
+      resolve(c.toDataURL('image/png'));
+    };
+    img.onerror = () => resolve(base64);
+    img.src = base64;
+  });
+}
+
+async function fbSave(key, base64, note) {
+  if (!_db) return;
+  try {
+    const compressed = await compressImg(base64);
+    await _fbSet(_fbDoc(key), { url: compressed, note: note||'' });
+  } catch(e) { console.warn('FB save error', e); }
+}
+async function fbGet(key) {
+  if (!_db) return null;
+  try {
+    const snap = await _fbGet(_fbDoc(key));
+    return snap.exists() ? snap.data() : null;
+  } catch(e) { return null; }
+}
+async function fbDel(key) {
+  if (!_db) return;
+  try { await _fbDel(_fbDoc(key)); } catch(e) {}
+}
+
+// ── Constants & State ──
+const WD     = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+const WD_CLS = ['','','','','','sat','sun'];
+const DOW_JP = ['日','一','二','三','四','五','六'];
+const TILTS  = ['-2.5deg','1.8deg','-1.2deg','2.2deg','0deg','-1.8deg','1.5deg','-0.8deg'];
+const CATS   = [
   {id:'outfit',icon:'👗',name:'穿搭'},
   {id:'food',  icon:'🍽️',name:'美食'},
   {id:'drink', icon:'🧋',name:'飲料'},
   {id:'life',  icon:'✨',name:'生活'},
 ];
-
-// ══════════════════════════════════════
-//  STATE
-// ══════════════════════════════════════
 const today = new Date();
-let calYear  = today.getFullYear();
-let calMonth = today.getMonth();
-let statsYear  = calYear;
-let statsMonth = calMonth;
-let activeCat  = 'outfit';
-let selDay     = null;
-let pendingSrc = null;
-let fbReady    = false;
-
-// Local cache: key → { url, note }
-// url can be either a Firebase download URL or a base64 string (while uploading)
+let calYear=today.getFullYear(), calMonth=today.getMonth();
+let statsYear=calYear, statsMonth=calMonth;
+let activeCat='outfit', selDay=null, pendingSrc=null;
 const cache = {};
+const ANNIV_KEY='kohibi_anniv_v5';
+let anniversaries=JSON.parse(localStorage.getItem(ANNIV_KEY)||'[]');
+const persistAnniv=()=>localStorage.setItem(ANNIV_KEY,JSON.stringify(anniversaries));
+const makeKey=(y,m,d,c)=>`${y}-${m}-${d}-${c}`;
 
-// Anniversaries (local only, no need for cloud)
-const ANNIV_KEY = 'kohibi_anniv_v4';
-let anniversaries = JSON.parse(localStorage.getItem(ANNIV_KEY) || '[]');
-const persistAnniv = () => localStorage.setItem(ANNIV_KEY, JSON.stringify(anniversaries));
-
-// ── key helper ──
-const makeKey = (y,m,d,c) => `${y}-${m}-${d}-${c}`;
-
-// ══════════════════════════════════════
-//  FIREBASE READY
-// ══════════════════════════════════════
-window.addEventListener('fb-ready', async () => {
-  fbReady = true;
-  document.getElementById('syncBadge').textContent = '已連線 ✓';
-  // Preload current month cache
-  await preloadMonth(calYear, calMonth);
-  renderCal();
-});
-
-// Fallback if FB fails to load
-setTimeout(()=>{
-  if(!fbReady){
-    document.getElementById('syncBadge').textContent = '離線模式';
-    document.getElementById('syncBadge').classList.add('err');
-  }
-}, 8000);
-
-async function preloadMonth(y, m) {
-  if (!window._fb) return;
-  const daysInMonth = new Date(y, m+1, 0).getDate();
-  for (const cat of CATS) {
-    for (let d = 1; d <= daysInMonth; d++) {
-      const key = makeKey(y,m,d,cat.id);
-      if (!cache[key]) {
-        const entry = await window._fb.getEntry(key);
-        if (entry) cache[key] = entry;
-      }
-    }
-  }
-}
-
-// ══════════════════════════════════════
-//  TOAST
-// ══════════════════════════════════════
+// ── Toast ──
 function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2400);
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._tid);
+  t._tid=setTimeout(()=>t.classList.remove('show'),2400);
 }
 
-// ══════════════════════════════════════
-//  PAGE NAVIGATION
-// ══════════════════════════════════════
+// ── Pages ──
 function gotoPage(id) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
-  document.querySelectorAll('.bnav-item').forEach(b => {
-    b.classList.toggle('active', b.dataset.page === id);
-  });
-  if (id === 'page-stats')  renderStats();
-  if (id === 'page-anniv')  renderAnnivList();
+  document.querySelectorAll('.bnav-item').forEach(b=>b.classList.toggle('active',b.dataset.page===id));
+  if(id==='page-stats') renderStats();
+  if(id==='page-anniv') renderAnnivList();
 }
-document.querySelectorAll('.bnav-item').forEach(b => {
-  b.addEventListener('click', () => gotoPage(b.dataset.page));
-});
+document.querySelectorAll('.bnav-item').forEach(b=>b.addEventListener('click',()=>gotoPage(b.dataset.page)));
 
-// ══════════════════════════════════════
-//  CALENDAR RENDER
-// ══════════════════════════════════════
+// ── Preload ──
+async function preloadMonth(y,m) {
+  const days = new Date(y,m+1,0).getDate();
+  const promises = [];
+  for(const cat of CATS)
+    for(let d=1;d<=days;d++) {
+      const key=makeKey(y,m,d,cat.id);
+      if(!cache[key]) promises.push(fbGet(key).then(e=>{ if(e) cache[key]=e; }));
+    }
+  await Promise.all(promises);
+}
+
+// ── Calendar ──
 function renderCal() {
-  document.getElementById('monthDisplay').textContent =
+  document.getElementById('monthDisplay').textContent=
     `${calYear}.${String(calMonth+1).padStart(2,'0')}`;
-
-  document.getElementById('weekdayRow').innerHTML =
-    WD.map((w,i) => `<th class="${WD_CLS[i]}">${w}</th>`).join('');
-
-  const body = document.getElementById('calBody');
-  body.innerHTML = '';
-
-  const firstDow    = new Date(calYear, calMonth, 1).getDay();
-  const offset      = (firstDow + 6) % 7;
-  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
-  const rows        = Math.ceil((offset + daysInMonth) / 7);
-
-  for (let r = 0; r < rows; r++) {
-    const tr = document.createElement('tr');
-    for (let c = 0; c < 7; c++) {
-      const d  = r*7 + c - offset + 1;
-      const td = document.createElement('td');
-      if (d < 1 || d > daysInMonth) {
-        td.className = 'empty';
-      } else {
-        const isToday = today.getFullYear()===calYear && today.getMonth()===calMonth && today.getDate()===d;
-        if (isToday) td.classList.add('today');
-
-        const key   = makeKey(calYear, calMonth, d, activeCat);
-        const entry = cache[key] || null;
-
-        if (entry?.url) td.classList.add('has-photo');
-
+  document.getElementById('weekdayRow').innerHTML=
+    WD.map((w,i)=>`<th class="${WD_CLS[i]}">${w}</th>`).join('');
+  const body=document.getElementById('calBody');
+  body.innerHTML='';
+  const firstDow=new Date(calYear,calMonth,1).getDay();
+  const offset=(firstDow+6)%7;
+  const days=new Date(calYear,calMonth+1,0).getDate();
+  const rows=Math.ceil((offset+days)/7);
+  for(let r=0;r<rows;r++){
+    const tr=document.createElement('tr');
+    for(let c=0;c<7;c++){
+      const d=r*7+c-offset+1;
+      const td=document.createElement('td');
+      if(d<1||d>days){ td.className='empty'; }
+      else {
+        const isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
+        if(isToday) td.classList.add('today');
+        const key=makeKey(calYear,calMonth,d,activeCat);
+        const entry=cache[key]||null;
+        if(entry?.url) td.classList.add('has-photo');
         // date num
-        const numEl = document.createElement('div');
-        numEl.className = 'day-num' + (c===5?' sat':c===6?' sun':'') + (isToday?' today-num':'');
-        numEl.textContent = d;
-        td.appendChild(numEl);
-
-        // sticker zone
-        const zone = document.createElement('div');
-        zone.className = 'sticker-zone';
-
-        if (entry?.url) {
-          // shimmer shown while image loads
-          const shimmer = document.createElement('div');
-          shimmer.className = 'sticker-shimmer';
-          zone.appendChild(shimmer);
-
-          const img = document.createElement('img');
-          img.className = 'sticker-photo';
-          img.src = entry.url;
-          img.style.setProperty('--tilt', TILTS[d % TILTS.length]);
-          img.loading = 'lazy';
-          img.onload = () => {
-            img.classList.add('loaded');   // fade in
-            shimmer.remove();              // remove shimmer
-          };
-          img.onerror = () => shimmer.remove();
+        const numEl=document.createElement('div');
+        numEl.className='day-num'+(c===5?' sat':c===6?' sun':'')+(isToday?' today-num':'');
+        numEl.textContent=d; td.appendChild(numEl);
+        // sticker
+        const zone=document.createElement('div'); zone.className='sticker-zone';
+        if(entry?.url){
+          const shimmer=document.createElement('div'); shimmer.className='sticker-shimmer'; zone.appendChild(shimmer);
+          const img=document.createElement('img'); img.className='sticker-photo';
+          img.src=entry.url; img.style.setProperty('--tilt',TILTS[d%TILTS.length]); img.loading='lazy';
+          img.onload=()=>{ img.classList.add('loaded'); shimmer.remove(); };
+          img.onerror=()=>shimmer.remove();
           zone.appendChild(img);
         } else {
-          const hint = document.createElement('div');
-          hint.className = 'add-hint';
-          hint.innerHTML = '<span>+</span>';
-          zone.appendChild(hint);
+          const hint=document.createElement('div'); hint.className='add-hint';
+          hint.innerHTML='<span>+</span>'; zone.appendChild(hint);
         }
         td.appendChild(zone);
-
         // note
-        if (entry?.note) {
-          const nl = document.createElement('div');
-          nl.className = 'note-label';
-          nl.textContent = entry.note;
-          td.appendChild(nl);
-        }
-
-        // anniversary dot
-        const anniv = anniversaries.find(a => a.month===(calMonth+1) && a.day===d);
-        if (anniv) {
-          const dot = document.createElement('div');
-          dot.className = 'special-dot';
-          dot.title = anniv.name;
-          td.appendChild(dot);
-        }
-
-        td.addEventListener('click', () => openSheet(d));
+        if(entry?.note){ const nl=document.createElement('div'); nl.className='note-label'; nl.textContent=entry.note; td.appendChild(nl); }
+        // anniv dot
+        const av=anniversaries.find(a=>a.month===(calMonth+1)&&a.day===d);
+        if(av){ const dot=document.createElement('div'); dot.className='special-dot'; dot.title=av.name; td.appendChild(dot); }
+        td.addEventListener('click',()=>openSheet(d));
       }
       tr.appendChild(td);
     }
@@ -978,496 +514,281 @@ function renderCal() {
   }
 }
 
-// ══════════════════════════════════════
-//  MONTH NAV
-// ══════════════════════════════════════
-document.getElementById('prevBtn').addEventListener('click', async () => {
-  calMonth--; if (calMonth < 0) { calMonth=11; calYear--; }
-  renderCal();
-  await preloadMonth(calYear, calMonth);
-  renderCal();
+// month nav
+document.getElementById('prevBtn').addEventListener('click',async()=>{
+  calMonth--; if(calMonth<0){calMonth=11;calYear--;} renderCal();
+  await preloadMonth(calYear,calMonth); renderCal();
 });
-document.getElementById('nextBtn').addEventListener('click', async () => {
-  calMonth++; if (calMonth > 11) { calMonth=0; calYear++; }
-  renderCal();
-  await preloadMonth(calYear, calMonth);
-  renderCal();
+document.getElementById('nextBtn').addEventListener('click',async()=>{
+  calMonth++; if(calMonth>11){calMonth=0;calYear++;} renderCal();
+  await preloadMonth(calYear,calMonth); renderCal();
 });
+document.querySelectorAll('.cat-tab').forEach(t=>t.addEventListener('click',()=>{
+  activeCat=t.dataset.cat;
+  document.querySelectorAll('.cat-tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); renderCal();
+}));
 
-document.querySelectorAll('.cat-tab').forEach(t => {
-  t.addEventListener('click', () => {
-    activeCat = t.dataset.cat;
-    document.querySelectorAll('.cat-tab').forEach(x => x.classList.remove('active'));
-    t.classList.add('active');
-    renderCal();
-  });
-});
-
-// ══════════════════════════════════════
-//  SHEET MODAL
-// ══════════════════════════════════════
+// ── Sheet ──
 function openSheet(d) {
-  selDay = d; pendingSrc = null;
-  const dow = new Date(calYear, calMonth, d).getDay();
-  document.getElementById('sheetTitle').textContent = `${calMonth+1}月${d}日（${DOW_JP[dow]}）`;
-  const cat = CATS.find(c => c.id === activeCat);
-  document.getElementById('sheetSub').textContent   = `${cat.icon} ${cat.name}記錄`;
-
-  const key   = makeKey(calYear, calMonth, d, activeCat);
-  const entry = cache[key] || null;
-  const area  = document.getElementById('uploadArea');
-
-  if (entry?.url) {
-    area.innerHTML = `<img src="${entry.url}" style="object-fit:contain;">`;
-    document.getElementById('deleteBtn').style.display = 'block';
+  selDay=d; pendingSrc=null;
+  const dow=new Date(calYear,calMonth,d).getDay();
+  document.getElementById('sheetTitle').textContent=`${calMonth+1}月${d}日（${DOW_JP[dow]}）`;
+  const cat=CATS.find(c=>c.id===activeCat);
+  document.getElementById('sheetSub').textContent=`${cat.icon} ${cat.name}記錄`;
+  const entry=cache[makeKey(calYear,calMonth,d,activeCat)]||null;
+  const area=document.getElementById('uploadArea');
+  if(entry?.url){
+    area.innerHTML=`<img src="${entry.url}" style="object-fit:contain;">`;
+    document.getElementById('deleteBtn').style.display='block';
   } else {
-    area.innerHTML = `<span class="upload-icon">📷</span><div class="upload-text">點此上傳照片<br>（去背後效果最棒）</div>`;
-    document.getElementById('deleteBtn').style.display = 'none';
+    area.innerHTML=`<span class="upload-icon">📷</span><div class="upload-text">點此上傳照片<br>（去背後效果最棒）</div>`;
+    document.getElementById('deleteBtn').style.display='none';
   }
-  area.onclick = () => document.getElementById('fileInput').click();
-  document.getElementById('noteInput').value = entry?.note || '';
-  document.getElementById('fileInput').value = '';
-  document.getElementById('saveBtn').disabled = false;
+  area.onclick=()=>document.getElementById('fileInput').click();
+  document.getElementById('noteInput').value=entry?.note||'';
+  document.getElementById('fileInput').value='';
   document.getElementById('overlay').classList.add('show');
 }
+function closeSheet(){ document.getElementById('overlay').classList.remove('show'); selDay=null; pendingSrc=null; }
 
-function closeSheet() {
-  document.getElementById('overlay').classList.remove('show');
-  selDay = null; pendingSrc = null;
-}
-
-document.getElementById('fileInput').addEventListener('change', async function() {
-  const file = this.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async ev => {
-    const cropped = await openCrop(ev.target.result);
-    if (!cropped) return;
-    pendingSrc = cropped;
-    // show preview immediately
-    const area = document.getElementById('uploadArea');
-    area.innerHTML = `<img src="${pendingSrc}" style="object-fit:contain;">`;
-    area.onclick = () => document.getElementById('fileInput').click();
-    document.getElementById('deleteBtn').style.display = 'none';
+// file selected → crop → preview
+document.getElementById('fileInput').addEventListener('change',async function(){
+  const file=this.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    const cropped=await openCrop(ev.target.result);
+    if(!cropped) return;
+    pendingSrc=cropped;
+    const area=document.getElementById('uploadArea');
+    area.innerHTML=`<img src="${pendingSrc}" style="object-fit:contain;">`;
+    area.onclick=()=>document.getElementById('fileInput').click();
+    document.getElementById('deleteBtn').style.display='none';
   };
   reader.readAsDataURL(file);
 });
 
-document.getElementById('saveBtn').addEventListener('click', async () => {
-  const key      = makeKey(calYear, calMonth, selDay, activeCat);
-  const note     = document.getElementById('noteInput').value.trim();
-  const existing = cache[key];
-  if (!pendingSrc && !existing?.url) { closeSheet(); return; }
-
-  const btn = document.getElementById('saveBtn');
-  btn.disabled = true; btn.textContent = '儲存中…';
-
-  // ① 立刻存進 local cache 並渲染（讓使用者馬上看到）
-  const localSrc = pendingSrc || existing.url;
-  cache[key] = { url: localSrc, note };
-  closeSheet();
-  renderCal();
-  showToast('已儲存 🌸');
-
-  // ② 背景上傳到 Firebase（不阻塞 UI）
-  if (pendingSrc && window._fb) {
-    window._fb.saveEntry(key, pendingSrc, note).then(result => {
-      if (result) cache[key] = result; // 更新為雲端版本
-    });
-  } else if (existing && window._fb) {
-    window._fb.saveEntry(key, localSrc, note);
-  }
-
-  btn.disabled = false; btn.textContent = '儲存';
+// save: instant local → background firebase
+document.getElementById('saveBtn').addEventListener('click',()=>{
+  const key=makeKey(calYear,calMonth,selDay,activeCat);
+  const note=document.getElementById('noteInput').value.trim();
+  const existing=cache[key];
+  const src=pendingSrc||(existing?.url);
+  if(!src){ closeSheet(); return; }
+  // ① 立刻存本地 cache 並關閉
+  cache[key]={url:src,note};
+  closeSheet(); renderCal(); showToast('已儲存 🌸');
+  // ② 背景上傳 Firebase（不擋 UI）
+  if(pendingSrc) fbSave(key,pendingSrc,note);
+  else if(note!==existing?.note) fbSave(key,src,note);
 });
 
-document.getElementById('cancelBtn').addEventListener('click', closeSheet);
-
-document.getElementById('deleteBtn').addEventListener('click', async () => {
-  const key = makeKey(calYear, calMonth, selDay, activeCat);
-  if (window._fb) await window._fb.deleteEntry(key);
-  delete cache[key];
-  closeSheet();
-  renderCal();
-  showToast('已刪除');
+document.getElementById('cancelBtn').addEventListener('click',closeSheet);
+document.getElementById('deleteBtn').addEventListener('click',()=>{
+  const key=makeKey(calYear,calMonth,selDay,activeCat);
+  delete cache[key]; fbDel(key);
+  closeSheet(); renderCal(); showToast('已刪除');
 });
+document.getElementById('overlay').addEventListener('click',function(e){ if(e.target===this) closeSheet(); });
 
-document.getElementById('overlay').addEventListener('click', function(e) {
-  if (e.target === this) closeSheet();
-});
-
-// ══════════════════════════════════════
-//  STATS
-// ══════════════════════════════════════
-function renderStats() {
-  statsYear = calYear; statsMonth = calMonth;
-  updateStats();
-}
-function updateStats() {
-  document.getElementById('statsMonthLabel').textContent =
-    `${statsYear}.${String(statsMonth+1).padStart(2,'0')}`;
-  const daysInMonth = new Date(statsYear, statsMonth+1, 0).getDate();
-  const cards = document.getElementById('statCards');
-  cards.innerHTML = '';
-  CATS.forEach(cat => {
-    let count = 0;
-    for (let d = 1; d <= daysInMonth; d++) {
-      if (cache[makeKey(statsYear, statsMonth, d, cat.id)]?.url) count++;
-    }
-    const pct = Math.round(count / daysInMonth * 100);
-    const card = document.createElement('div');
-    card.className = 'stat-card';
-    card.innerHTML = `
-      <div class="stat-card-top">
-        <div class="stat-cat-name">${cat.icon} ${cat.name}</div>
-        <div class="stat-count">${count}<span> / ${daysInMonth}天</span></div>
-      </div>
-      <div class="stat-bar-bg">
-        <div class="stat-bar-fill c-${cat.id}" style="width:${pct}%"></div>
-      </div>
-      ${count > 0
-        ? `<div class="stat-pct">已記錄 ${pct}% 的日子 ✨</div>`
-        : `<div class="stat-empty">本月還沒有記錄 · 快去拍第一張吧！</div>`}
-    `;
+// ── Stats ──
+function renderStats(){ statsYear=calYear; statsMonth=calMonth; updateStats(); }
+function updateStats(){
+  document.getElementById('statsMonthLabel').textContent=`${statsYear}.${String(statsMonth+1).padStart(2,'0')}`;
+  const days=new Date(statsYear,statsMonth+1,0).getDate();
+  const cards=document.getElementById('statCards'); cards.innerHTML='';
+  CATS.forEach(cat=>{
+    let count=0;
+    for(let d=1;d<=days;d++) if(cache[makeKey(statsYear,statsMonth,d,cat.id)]?.url) count++;
+    const pct=Math.round(count/days*100);
+    const card=document.createElement('div'); card.className='stat-card';
+    card.innerHTML=`<div class="stat-card-top"><div class="stat-cat-name">${cat.icon} ${cat.name}</div><div class="stat-count">${count}<span> / ${days}天</span></div></div><div class="stat-bar-bg"><div class="stat-bar-fill c-${cat.id}" style="width:${pct}%"></div></div>${count>0?`<div class="stat-pct">已記錄 ${pct}% ✨</div>`:`<div class="stat-empty">本月還沒有記錄 · 快去拍第一張吧！</div>`}`;
     cards.appendChild(card);
   });
 }
-document.getElementById('statsPrevBtn').addEventListener('click', () => {
-  statsMonth--; if (statsMonth < 0) { statsMonth=11; statsYear--; } updateStats();
-});
-document.getElementById('statsNextBtn').addEventListener('click', () => {
-  statsMonth++; if (statsMonth > 11) { statsMonth=0; statsYear++; } updateStats();
-});
+document.getElementById('statsPrevBtn').addEventListener('click',()=>{ statsMonth--; if(statsMonth<0){statsMonth=11;statsYear--;} updateStats(); });
+document.getElementById('statsNextBtn').addEventListener('click',()=>{ statsMonth++; if(statsMonth>11){statsMonth=0;statsYear++;} updateStats(); });
 
-// ══════════════════════════════════════
-//  ANNIVERSARIES
-// ══════════════════════════════════════
-function renderAnnivList() {
-  const el = document.getElementById('annivListEl');
-  if (!anniversaries.length) {
-    el.innerHTML = `<div class="anniv-empty">還沒有紀念日 · 點上方新增 🎀</div>`;
-    return;
-  }
-  el.innerHTML = '';
-  [...anniversaries]
-    .sort((a,b) => a.month*100+a.day - (b.month*100+b.day))
-    .forEach(a => {
-      const idx = anniversaries.indexOf(a);
-      const row = document.createElement('div');
-      row.className = 'anniv-item';
-      row.innerHTML = `
-        <div class="anniv-left">
-          <div class="anniv-date">${a.month}/${String(a.day).padStart(2,'0')}</div>
-          <div class="anniv-name">${a.name}</div>
-        </div>
-        <button class="anniv-del" data-idx="${idx}">×</button>
-      `;
-      el.appendChild(row);
-    });
-  el.querySelectorAll('.anniv-del').forEach(btn => {
-    btn.addEventListener('click', () => {
-      anniversaries.splice(parseInt(btn.dataset.idx), 1);
-      persistAnniv(); renderAnnivList(); renderCal();
-    });
+// ── Anniversaries ──
+function renderAnnivList(){
+  const el=document.getElementById('annivListEl');
+  if(!anniversaries.length){ el.innerHTML=`<div class="anniv-empty">還沒有紀念日 · 點上方新增 🎀</div>`; return; }
+  el.innerHTML='';
+  [...anniversaries].sort((a,b)=>a.month*100+a.day-(b.month*100+b.day)).forEach(a=>{
+    const idx=anniversaries.indexOf(a);
+    const row=document.createElement('div'); row.className='anniv-item';
+    row.innerHTML=`<div class="anniv-left"><div class="anniv-date">${a.month}/${String(a.day).padStart(2,'0')}</div><div class="anniv-name">${a.name}</div></div><button class="anniv-del" data-idx="${idx}">×</button>`;
+    el.appendChild(row);
   });
+  el.querySelectorAll('.anniv-del').forEach(btn=>btn.addEventListener('click',()=>{
+    anniversaries.splice(parseInt(btn.dataset.idx),1); persistAnniv(); renderAnnivList(); renderCal();
+  }));
 }
-function toggleAnnivForm() {
-  document.getElementById('annivForm').classList.toggle('show');
-}
-function saveAnniv() {
-  const m    = parseInt(document.getElementById('annivMonth').value);
-  const d    = parseInt(document.getElementById('annivDay').value);
-  const name = document.getElementById('annivName').value.trim();
-  if (!m||!d||!name||m<1||m>12||d<1||d>31) { showToast('請填寫完整資訊'); return; }
-  anniversaries.push({ month:m, day:d, name });
-  persistAnniv();
-  ['annivMonth','annivDay','annivName'].forEach(id => document.getElementById(id).value='');
+document.getElementById('addAnnivRow').addEventListener('click',()=>document.getElementById('annivForm').classList.toggle('show'));
+document.getElementById('annivSaveBtn').addEventListener('click',()=>{
+  const m=parseInt(document.getElementById('annivMonth').value);
+  const d=parseInt(document.getElementById('annivDay').value);
+  const name=document.getElementById('annivName').value.trim();
+  if(!m||!d||!name||m<1||m>12||d<1||d>31){ showToast('請填寫完整資訊'); return; }
+  anniversaries.push({month:m,day:d,name}); persistAnniv();
+  ['annivMonth','annivDay','annivName'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('annivForm').classList.remove('show');
-  renderAnnivList(); renderCal();
-  showToast('紀念日已新增 🎀');
-}
+  renderAnnivList(); renderCal(); showToast('紀念日已新增 🎀');
+});
 
-// ══════════════════════════════════════
-//  CROP  (canvas-draw, works on iOS)
-//  Ratio: 3:4 (portrait, matches calendar cell)
-// ══════════════════════════════════════
-const CROP_W = 3, CROP_H = 4; // aspect ratio
-let _ci = null; // crop image
-let _cx = 0, _cy = 0, _cs = 1; // offset & scale
-let _dragging = false, _lx = 0, _ly = 0;
-let _pinch0 = 0, _pinchCX = 0, _pinchCY = 0;
-let _cropResolve = null;
+// ── Crop (canvas-based, works on iOS) ──
+let _ci=null,_cx=0,_cy=0,_cs=1,_drag=false,_lx=0,_ly=0,_pinch0=0,_pcx=0,_pcy=0,_cropRes=null;
+const _cWrap=document.getElementById('cropWrap');
+const _cCvs=document.getElementById('cropCanvas');
+const _cCtx=_cCvs.getContext('2d');
 
-const _cWrap   = document.getElementById('cropWrap');
-const _cCanvas = document.getElementById('cropCanvas');
-const _cCtx    = _cCanvas.getContext('2d');
-
-function openCrop(base64) {
-  return new Promise(resolve => {
-    _cropResolve = resolve;
-    const img = new Image();
-    img.onload = () => {
-      _ci = img;
-      // canvas physical size = wrap display size × devicePixelRatio
-      const dpr = window.devicePixelRatio || 1;
-      const W   = _cWrap.clientWidth  * dpr;
-      const H   = _cWrap.clientHeight * dpr;
-      _cCanvas.width  = W;
-      _cCanvas.height = H;
-      _cCanvas.style.width  = _cWrap.clientWidth  + 'px';
-      _cCanvas.style.height = _cWrap.clientHeight + 'px';
-      // scale so image fills the frame
-      const s = Math.max(W / img.width, H / img.height);
-      _cs = s;
-      _cx = (W - img.width  * s) / 2;
-      _cy = (H - img.height * s) / 2;
-      _drawCrop();
-      document.getElementById('cropOverlay').classList.add('show');
+function openCrop(base64){
+  return new Promise(resolve=>{
+    _cropRes=resolve;
+    const img=new Image();
+    img.onload=()=>{
+      _ci=img;
+      const dpr=window.devicePixelRatio||1;
+      const W=_cWrap.clientWidth*dpr, H=_cWrap.clientHeight*dpr;
+      _cCvs.width=W; _cCvs.height=H;
+      _cCvs.style.width=_cWrap.clientWidth+'px';
+      _cCvs.style.height=_cWrap.clientHeight+'px';
+      const s=Math.max(W/img.width,H/img.height);
+      _cs=s; _cx=(W-img.width*s)/2; _cy=(H-img.height*s)/2;
+      _drawCrop(); document.getElementById('cropOverlay').classList.add('show');
     };
-    img.src = base64;
+    img.src=base64;
   });
 }
-
-function _drawCrop() {
-  const W = _cCanvas.width, H = _cCanvas.height;
-  _cCtx.clearRect(0, 0, W, H);
-  _cCtx.drawImage(_ci, _cx, _cy, _ci.width * _cs, _ci.height * _cs);
-}
-
-function _cropResult() {
-  // export at 2× the display size for quality
-  const dpr = window.devicePixelRatio || 1;
-  const dispW = _cWrap.clientWidth;
-  const dispH = _cWrap.clientHeight;
-  const out = document.createElement('canvas');
-  out.width  = dispW * 2;
-  out.height = dispH * 2;
-  const ctx = out.getContext('2d');
-  // scale factor from canvas coords → output coords
-  const sx = (dispW * 2) / _cCanvas.width;
-  const sy = (dispH * 2) / _cCanvas.height;
-  ctx.drawImage(_ci,
-    _cx * sx, _cy * sy,
-    _ci.width * _cs * sx,
-    _ci.height * _cs * sy
-  );
+function _drawCrop(){ _cCtx.clearRect(0,0,_cCvs.width,_cCvs.height); _cCtx.drawImage(_ci,_cx,_cy,_ci.width*_cs,_ci.height*_cs); }
+function _cropResult(){
+  const dpr=window.devicePixelRatio||1;
+  const W=_cWrap.clientWidth*2, H=_cWrap.clientHeight*2;
+  const out=document.createElement('canvas'); out.width=W; out.height=H;
+  const ctx=out.getContext('2d');
+  const sx=W/_cCvs.width, sy=H/_cCvs.height;
+  ctx.drawImage(_ci,_cx*sx,_cy*sy,_ci.width*_cs*sx,_ci.height*_cs*sy);
   return out.toDataURL('image/png');
 }
-
-// ── pointer / touch events ──
-function _getPos(e) {
-  const r = _cCanvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-  if (e.touches) {
-    return { x: (e.touches[0].clientX - r.left) * dpr,
-             y: (e.touches[0].clientY - r.top)  * dpr };
+function _gp(e){
+  const r=_cCvs.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+  if(e.touches) return{x:(e.touches[0].clientX-r.left)*dpr,y:(e.touches[0].clientY-r.top)*dpr};
+  return{x:(e.clientX-r.left)*dpr,y:(e.clientY-r.top)*dpr};
+}
+_cCvs.addEventListener('mousedown',e=>{ _drag=true; const p=_gp(e); _lx=p.x;_ly=p.y; e.preventDefault(); });
+window.addEventListener('mousemove',e=>{ if(!_drag)return; const p=_gp(e); _cx+=p.x-_lx;_cy+=p.y-_ly;_lx=p.x;_ly=p.y; _drawCrop(); });
+window.addEventListener('mouseup',()=>_drag=false);
+_cCvs.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  if(e.touches.length===1){ _drag=true; const p=_gp(e);_lx=p.x;_ly=p.y; }
+  else if(e.touches.length===2){
+    _drag=false;
+    _pinch0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    const r=_cCvs.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+    _pcx=((e.touches[0].clientX+e.touches[1].clientX)/2-r.left)*dpr;
+    _pcy=((e.touches[0].clientY+e.touches[1].clientY)/2-r.top)*dpr;
   }
-  return { x: (e.clientX - r.left) * dpr,
-           y: (e.clientY - r.top)  * dpr };
+},{passive:false});
+_cCvs.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(e.touches.length===1&&_drag){ const p=_gp(e);_cx+=p.x-_lx;_cy+=p.y-_ly;_lx=p.x;_ly=p.y;_drawCrop(); }
+  else if(e.touches.length===2){
+    const dist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    const ratio=dist/_pinch0;
+    _cx=_pcx+(_cx-_pcx)*ratio; _cy=_pcy+(_cy-_pcy)*ratio; _cs*=ratio; _pinch0=dist; _drawCrop();
+  }
+},{passive:false});
+_cCvs.addEventListener('touchend',()=>_drag=false);
+document.getElementById('cropOk').addEventListener('click',()=>{
+  const r=_cropResult(); document.getElementById('cropOverlay').classList.remove('show');
+  if(_cropRes){_cropRes(r);_cropRes=null;}
+});
+document.getElementById('cropCancel').addEventListener('click',()=>{
+  document.getElementById('cropOverlay').classList.remove('show');
+  if(_cropRes){_cropRes(null);_cropRes=null;}
+});
+
+// ── Export / Import ──
+function loadScript(src){ return new Promise(r=>{ if(document.querySelector(`script[src="${src}"]`)){r();return;} const s=document.createElement('script');s.src=src;s.onload=r;document.head.appendChild(s); }); }
+
+function dlCanvas(canvas,fname){
+  const a=document.createElement('a');
+  a.href=canvas.toDataURL('image/png');
+  a.download=fname;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
 }
 
-_cCanvas.addEventListener('mousedown', e => {
-  _dragging=true; const p=_getPos(e); _lx=p.x; _ly=p.y; e.preventDefault();
-});
-window.addEventListener('mousemove', e => {
-  if (!_dragging) return;
-  const p=_getPos(e);
-  _cx += p.x-_lx; _cy += p.y-_ly;
-  _lx=p.x; _ly=p.y;
-  _drawCrop();
-});
-window.addEventListener('mouseup', () => _dragging=false);
+async function captureCalendar(scale){
+  // must be on cal page
+  gotoPage('page-cal');
+  await new Promise(r=>setTimeout(r,500));
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+  return html2canvas(document.getElementById('page-cal'),{
+    scale:scale||2, useCORS:true, allowTaint:true,
+    backgroundColor:'#f7f3ee',
+    ignoreElements:el=>el.classList.contains('bnav')||el.classList.contains('cat-tabs')||el.id==='overlay'||el.id==='cropOverlay'
+  });
+}
 
-_cCanvas.addEventListener('touchstart', e => {
-  e.preventDefault();
-  if (e.touches.length===1) {
-    _dragging=true;
-    const p=_getPos(e); _lx=p.x; _ly=p.y;
-  } else if (e.touches.length===2) {
-    _dragging=false;
-    _pinch0 = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-    const r = _cCanvas.getBoundingClientRect();
-    const dpr = window.devicePixelRatio||1;
-    _pinchCX = ((e.touches[0].clientX+e.touches[1].clientX)/2 - r.left) * dpr;
-    _pinchCY = ((e.touches[0].clientY+e.touches[1].clientY)/2 - r.top)  * dpr;
-  }
-},{passive:false});
-
-_cCanvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  if (e.touches.length===1 && _dragging) {
-    const p=_getPos(e);
-    _cx += p.x-_lx; _cy += p.y-_ly;
-    _lx=p.x; _ly=p.y;
-    _drawCrop();
-  } else if (e.touches.length===2) {
-    const dist = Math.hypot(
-      e.touches[0].clientX - e.touches[1].clientX,
-      e.touches[0].clientY - e.touches[1].clientY
-    );
-    const ratio = dist / _pinch0;
-    _cx = _pinchCX + (_cx - _pinchCX) * ratio;
-    _cy = _pinchCY + (_cy - _pinchCY) * ratio;
-    _cs *= ratio;
-    _pinch0 = dist;
-    _drawCrop();
-  }
-},{passive:false});
-
-_cCanvas.addEventListener('touchend', () => _dragging=false);
-
-document.getElementById('cropOk').addEventListener('click', () => {
-  const result = _cropResult();
-  document.getElementById('cropOverlay').classList.remove('show');
-  if (_cropResolve) { _cropResolve(result); _cropResolve=null; }
-});
-document.getElementById('cropCancel').addEventListener('click', () => {
-  document.getElementById('cropOverlay').classList.remove('show');
-  if (_cropResolve) { _cropResolve(null); _cropResolve=null; }
+// PNG
+document.getElementById('btnExportPNG').addEventListener('click',async()=>{
+  showToast('產生中… 🖼️');
+  const c=await captureCalendar(2.5);
+  dlCanvas(c,`kohibi-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`);
+  showToast('PNG 已下載 🌸');
 });
 
-// ══════════════════════════════════════
-//  SETTINGS
-// ══════════════════════════════════════
-function exportJSON() {
-  const meta = {};
-  Object.entries(cache).forEach(([k,v]) => { meta[k] = { note: v.note||'' }; });
-  const blob = new Blob([JSON.stringify(meta,null,2)], {type:'application/json'});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  const dt   = new Date();
-  a.href = url;
-  a.download = `kohibi-${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,'0')}${String(dt.getDate()).padStart(2,'0')}.json`;
-  a.click(); URL.revokeObjectURL(url);
+// Stories 9:16
+document.getElementById('btnExportStories').addEventListener('click',async()=>{
+  showToast('產生限動版… ✨');
+  const src=await captureCalendar(2.5);
+  const W=src.width, H=Math.round(W*16/9);
+  const out=document.createElement('canvas'); out.width=W; out.height=H;
+  const ctx=out.getContext('2d');
+  ctx.fillStyle='#f7f3ee'; ctx.fillRect(0,0,W,H);
+  if(src.height<=H){ ctx.drawImage(src,0,Math.round((H-src.height)/2)); }
+  else { const s=H/src.height; const nw=Math.round(src.width*s); ctx.drawImage(src,Math.round((W-nw)/2),0,nw,H); }
+  dlCanvas(out,`kohibi-stories-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`);
+  showToast('限動版已下載 📱');
+});
+
+// PDF
+document.getElementById('btnExportPDF').addEventListener('click',async()=>{
+  showToast('產生 PDF… 🖨️');
+  const src=await captureCalendar(2);
+  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const pgW=pdf.internal.pageSize.getWidth(), pgH=pdf.internal.pageSize.getHeight();
+  const ratio=Math.min((pgW-20)/src.width,(pgH-20)/src.height);
+  const w=src.width*ratio, h=src.height*ratio;
+  pdf.addImage(src.toDataURL('image/png'),'PNG',(pgW-w)/2,(pgH-h)/2,w,h);
+  pdf.save(`kohibi-${calYear}-${String(calMonth+1).padStart(2,'0')}.pdf`);
+  showToast('PDF 已下載 🖨️');
+});
+
+// JSON backup
+document.getElementById('btnExportJSON').addEventListener('click',()=>{
+  const meta={};
+  Object.entries(cache).forEach(([k,v])=>{ meta[k]={note:v.note||''}; });
+  const dt=new Date();
+  const blob=new Blob([JSON.stringify(meta,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`kohibi-${dt.getFullYear()}${String(dt.getMonth()+1).padStart(2,'0')}${String(dt.getDate()).padStart(2,'0')}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
   showToast('備份已下載 💾');
-}
-
-function importJSON() { document.getElementById('importInput').click(); }
-document.getElementById('importInput').addEventListener('change', function() {
-  const file = this.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      Object.assign(cache, JSON.parse(ev.target.result));
-      renderCal(); showToast('還原成功 ✅');
-    } catch(e) { showToast('檔案格式錯誤 ❌'); }
-  };
+});
+document.getElementById('btnImportJSON').addEventListener('click',()=>document.getElementById('importInput').click());
+document.getElementById('importInput').addEventListener('change',function(){
+  const file=this.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ try{ Object.assign(cache,JSON.parse(ev.target.result)); renderCal(); showToast('還原成功 ✅'); }catch(e){ showToast('格式錯誤 ❌'); } };
   reader.readAsText(file); this.value='';
 });
 
-// ── html2canvas 載入 ──
-function loadHtml2Canvas() {
-  return new Promise(resolve => {
-    if (window.html2canvas) { resolve(); return; }
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-    s.onload = resolve;
-    document.head.appendChild(s);
-  });
-}
-
-// ── 截月曆畫面 ──
-async function getCalCanvas(scale) {
-  gotoPage('page-cal');
-  await new Promise(r => setTimeout(r, 500));
-  return html2canvas(document.getElementById('page-cal'), {
-    scale: scale || 2,
-    useCORS: true,
-    allowTaint: true,
-    backgroundColor: '#f7f3ee',
-    ignoreElements: el =>
-      el.classList.contains('bnav') ||
-      el.classList.contains('cat-tabs') ||
-      el.id === 'overlay' ||
-      el.id === 'cropOverlay'
-  });
-}
-
-// ── 下載 helper ──
-function downloadCanvas(canvas, filename) {
-  const a = document.createElement('a');
-  a.href = canvas.toDataURL('image/png');
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-}
-
-// ── PNG 月曆原比例 ──
-async function exportMonthPNG() {
-  showToast('產生中… 🖼️');
-  await loadHtml2Canvas();
-  const canvas = await getCalCanvas(2.5);
-  downloadCanvas(canvas, `kohibi-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`);
-  showToast('PNG 已下載 🌸');
-}
-
-// ── 9:16 限時動態版 ──
-async function exportSquarePNG() {
-  showToast('產生限動版… ✨');
-  await loadHtml2Canvas();
-  const src = await getCalCanvas(2.5);
-
-  // 9:16：以寬度為準，高度 = 寬 × 16/9
-  const W = src.width;
-  const H = Math.round(W * 16 / 9);
-  const out = document.createElement('canvas');
-  out.width = W; out.height = H;
-  const ctx = out.getContext('2d');
-  ctx.fillStyle = '#f7f3ee';
-  ctx.fillRect(0, 0, W, H);
-  // 月曆垂直置中（若月曆比 9:16 矮則置中，比 9:16 高則縮放）
-  if (src.height <= H) {
-    const oy = Math.round((H - src.height) / 2);
-    ctx.drawImage(src, 0, oy);
-  } else {
-    // 縮放月曆以符合 9:16
-    const scale = H / src.height;
-    const newW  = Math.round(src.width * scale);
-    const ox    = Math.round((W - newW) / 2);
-    ctx.drawImage(src, ox, 0, newW, H);
-  }
-  downloadCanvas(out, `kohibi-stories-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`);
-  showToast('限動版已下載 📱');
-}
-
-// ── PDF：截圖後直接下載 PDF（用 jsPDF）──
-async function exportMonthPDF() {
-  showToast('產生 PDF… 🖨️');
-  await loadHtml2Canvas();
-  // 載入 jsPDF
-  if (!window.jspdf) {
-    await new Promise(resolve => {
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-      s.onload = resolve;
-      document.head.appendChild(s);
-    });
-  }
-  const canvas  = await getCalCanvas(2);
-  const imgData = canvas.toDataURL('image/png');
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
-  const pgW = pdf.internal.pageSize.getWidth();
-  const pgH = pdf.internal.pageSize.getHeight();
-  // 等比例放入 A4
-  const imgW = canvas.width, imgH = canvas.height;
-  const ratio = Math.min(pgW / imgW, pgH / imgH);
-  const w = imgW * ratio, h = imgH * ratio;
-  const x = (pgW - w) / 2, y = (pgH - h) / 2;
-  pdf.addImage(imgData, 'PNG', x, y, w, h);
-  pdf.save(`kohibi-${calYear}-${String(calMonth+1).padStart(2,'0')}.pdf`);
-  showToast('PDF 已下載 🖨️');
-}
-
-// ══════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════
-renderCal(); // show empty grid immediately, FB data fills in when ready
+// ── Init ──
+renderCal();
 renderAnnivList();
 </script>
-
 </body>
 </html>
