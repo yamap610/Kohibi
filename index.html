@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
@@ -28,131 +29,131 @@ html,body{background:var(--bg);font-family:'Zen Maru Gothic',sans-serif;color:va
 .page.active{display:block;}
 
 /* NAV */
-.bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(250,247,243,0.97);backdrop-filter:blur(14px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:8px 0 max(10px,env(safe-area-inset-bottom));z-index:200;}
+.bnav{position:fixed;bottom:0;left:0;right:0;background:rgba(250,247,243,0.97);backdrop-filter:blur(14px);border-top:1px solid var(–line);display:flex;justify-content:space-around;padding:8px 0 max(10px,env(safe-area-inset-bottom));z-index:200;}
 .bnav-item{display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;font-size:10px;letter-spacing:0.5px;padding:4px 14px;color:rgba(176,160,144,0.4);transition:color 0.2s;}
 .bnav-item .bi{font-size:21px;opacity:0.4;transition:transform 0.2s;}
 .bnav-item span:last-child{opacity:0.4;}
-.bnav-item.active{color:var(--text);}
+.bnav-item.active{color:var(–text);}
 .bnav-item.active .bi{transform:scale(1.12);opacity:1;}
 .bnav-item.active span:last-child{opacity:1;}
 
 /* CAL HEADER */
-.cal-header{padding:28px 20px 10px;display:flex;align-items:center;justify-content:center;gap:20px;background:var(--bg);position:sticky;top:0;z-index:100;}
-.nav-btn{background:none;border:none;font-size:20px;color:var(--light);cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;transition:all 0.2s;}
-.nav-btn:hover{color:var(--text);background:rgba(0,0,0,0.05);}
-.month-display{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:clamp(26px,6vw,40px);letter-spacing:6px;color:var(--text);}
+.cal-header{padding:28px 20px 10px;display:flex;align-items:center;justify-content:center;gap:20px;background:var(–bg);position:sticky;top:0;z-index:100;}
+.nav-btn{background:none;border:none;font-size:20px;color:var(–light);cursor:pointer;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:‘Cormorant Garamond’,serif;transition:all 0.2s;}
+.nav-btn:hover{color:var(–text);background:rgba(0,0,0,0.05);}
+.month-display{font-family:‘Cormorant Garamond’,serif;font-weight:300;font-size:clamp(26px,6vw,40px);letter-spacing:6px;color:var(–text);}
 
 /* TABS */
 .cat-tabs{display:flex;justify-content:center;gap:6px;padding:6px 14px 14px;flex-wrap:wrap;}
-.cat-tab{padding:5px 14px;border-radius:30px;border:1.5px solid var(--line);background:transparent;font-family:'Zen Maru Gothic',sans-serif;font-size:12px;color:var(--light);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:4px;}
-.cat-tab:hover{border-color:var(--accent);color:var(--text);}
-.cat-tab.active{background:var(--text);border-color:var(--text);color:#faf7f3;}
+.cat-tab{padding:5px 14px;border-radius:30px;border:1.5px solid var(–line);background:transparent;font-family:‘Zen Maru Gothic’,sans-serif;font-size:12px;color:var(–light);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:4px;}
+.cat-tab:hover{border-color:var(–accent);color:var(–text);}
+.cat-tab.active{background:var(–text);border-color:var(–text);color:#faf7f3;}
 
 /* CALENDAR */
 .cal-outer{padding:0 8px 8px;max-width:700px;margin:0 auto;}
-.cal-table{width:100%;border-collapse:collapse;border:1px solid var(--line);background:var(--paper);}
-.weekday-header th{font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(8px,1.8vw,11px);letter-spacing:2px;color:var(--light);padding:9px 0 7px;text-align:center;border-bottom:1px solid var(--line);width:calc(100%/7);}
-.weekday-header th.sat,.weekday-header th.sun{color:var(--sat);}
-.cal-table td{border:1px solid var(--line);vertical-align:top;padding:0;height:clamp(82px,19vw,145px);width:calc(100%/7);position:relative;cursor:pointer;overflow:hidden;transition:background 0.15s;}
+.cal-table{width:100%;border-collapse:collapse;border:1px solid var(–line);background:var(–paper);}
+.weekday-header th{font-family:‘Cormorant Garamond’,serif;font-weight:400;font-size:clamp(8px,1.8vw,11px);letter-spacing:2px;color:var(–light);padding:9px 0 7px;text-align:center;border-bottom:1px solid var(–line);width:calc(100%/7);}
+.weekday-header th.sat,.weekday-header th.sun{color:var(–sat);}
+.cal-table td{border:1px solid var(–line);vertical-align:top;padding:0;height:clamp(82px,19vw,145px);width:calc(100%/7);position:relative;cursor:pointer;overflow:hidden;transition:background 0.15s;}
 .cal-table td:hover{background:rgba(200,168,152,0.07);}
 .cal-table td.empty{cursor:default;background:rgba(0,0,0,0.01);}
 .cal-table td.today{background:rgba(200,168,152,0.1);}
-.day-num{position:absolute;top:5px;left:6px;font-family:'Cormorant Garamond',serif;font-weight:400;font-size:clamp(10px,1.9vw,13px);color:var(--text);line-height:1;z-index:3;transition:opacity 0.2s;}
-.day-num.sat,.day-num.sun{color:var(--sat);}
-.day-num.today-num{background:var(--sat);color:white;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;}
+.day-num{position:absolute;top:5px;left:6px;font-family:‘Cormorant Garamond’,serif;font-weight:400;font-size:clamp(10px,1.9vw,13px);color:var(–text);line-height:1;z-index:3;transition:opacity 0.2s;}
+.day-num.sat,.day-num.sun{color:var(–sat);}
+.day-num.today-num{background:var(–sat);color:white;width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;}
 .has-photo .day-num{opacity:0;}
 .sticker-zone{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:1;}
-.sticker-photo{width:90%;height:90%;object-fit:contain;transform:rotate(var(--tilt,0deg));transform-origin:center;transition:transform 0.2s,opacity 0.3s;filter:drop-shadow(0 2px 6px rgba(80,60,50,0.18));opacity:0;}
+.sticker-photo{width:90%;height:90%;object-fit:contain;transform:rotate(var(–tilt,0deg));transform-origin:center;transition:transform 0.2s,opacity 0.3s;filter:drop-shadow(0 2px 6px rgba(80,60,50,0.18));opacity:0;}
 .sticker-photo.loaded{opacity:1;}
 .cal-table td:hover .sticker-photo{transform:rotate(0deg) scale(1.05);}
-.sticker-shimmer{position:absolute;inset:8px;background:linear-gradient(90deg,var(--line) 25%,rgba(255,255,255,0.6) 50%,var(--line) 75%);background-size:200% 100%;animation:shimmer 1.3s infinite;border-radius:10px;}
+.sticker-shimmer{position:absolute;inset:8px;background:linear-gradient(90deg,var(–line) 25%,rgba(255,255,255,0.6) 50%,var(–line) 75%);background-size:200% 100%;animation:shimmer 1.3s infinite;border-radius:10px;}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
-.note-label{position:absolute;bottom:3px;left:2px;right:2px;font-size:clamp(6px,1.2vw,8px);color:var(--light);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:4;pointer-events:none;}
+.note-label{position:absolute;bottom:3px;left:2px;right:2px;font-size:clamp(6px,1.2vw,8px);color:var(–light);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;z-index:4;pointer-events:none;}
 .has-photo .note-label{color:rgba(255,255,255,0.9);text-shadow:0 1px 3px rgba(0,0,0,0.35);}
 .add-hint{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.2s;}
 .cal-table td:hover .add-hint{opacity:1;}
-.add-hint span{width:24px;height:24px;border-radius:50%;border:1.5px dashed var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--accent);background:rgba(250,247,243,0.85);}
-.special-dot{position:absolute;bottom:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(--sat);z-index:5;box-shadow:0 0 0 1.5px white;}
+.add-hint span{width:24px;height:24px;border-radius:50%;border:1.5px dashed var(–accent);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(–accent);background:rgba(250,247,243,0.85);}
+.special-dot{position:absolute;bottom:3px;right:3px;width:6px;height:6px;border-radius:50%;background:var(–sat);z-index:5;box-shadow:0 0 0 1.5px white;}
 
 /* FOOTER */
 .footer-deco{display:flex;align-items:center;justify-content:space-between;padding:10px 18px 10px;max-width:700px;margin:0 auto;}
-.footer-title{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:14px;letter-spacing:3px;color:var(--light);}
+.footer-title{font-family:‘Cormorant Garamond’,serif;font-weight:300;font-size:14px;letter-spacing:3px;color:var(–light);}
 #page-cal{padding-bottom:72px;}
 
 /* SHEET */
 .overlay{position:fixed;inset:0;background:rgba(80,60,50,0.28);backdrop-filter:blur(8px);z-index:400;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.3s;}
 .overlay.show{opacity:1;pointer-events:all;}
-.sheet{background:var(--paper);border-radius:24px 24px 0 0;padding:18px 20px 36px;width:100%;max-width:520px;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.34,1.4,0.64,1);max-height:92vh;overflow-y:auto;}
+.sheet{background:var(–paper);border-radius:24px 24px 0 0;padding:18px 20px 36px;width:100%;max-width:520px;transform:translateY(100%);transition:transform 0.35s cubic-bezier(0.34,1.4,0.64,1);max-height:92vh;overflow-y:auto;}
 .overlay.show .sheet{transform:translateY(0);}
-.sheet-handle{width:34px;height:3px;background:var(--line);border-radius:2px;margin:0 auto 16px;}
-.sheet-title{font-family:'Cormorant Garamond',serif;font-size:19px;letter-spacing:3px;color:var(--text);text-align:center;margin-bottom:3px;}
-.sheet-sub{text-align:center;font-size:11px;color:var(--light);margin-bottom:14px;}
-.upload-area{width:150px;aspect-ratio:3/4;margin:0 auto 14px;border:2px dashed var(--line);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;overflow:hidden;transition:border-color 0.2s;}
-.upload-area:hover{border-color:var(--accent);}
+.sheet-handle{width:34px;height:3px;background:var(–line);border-radius:2px;margin:0 auto 16px;}
+.sheet-title{font-family:‘Cormorant Garamond’,serif;font-size:19px;letter-spacing:3px;color:var(–text);text-align:center;margin-bottom:3px;}
+.sheet-sub{text-align:center;font-size:11px;color:var(–light);margin-bottom:14px;}
+.upload-area{width:150px;aspect-ratio:3/4;margin:0 auto 14px;border:2px dashed var(–line);border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;cursor:pointer;overflow:hidden;transition:border-color 0.2s;}
+.upload-area:hover{border-color:var(–accent);}
 .upload-area img{width:100%;height:100%;object-fit:contain;}
 .upload-icon{font-size:26px;opacity:0.4;}
-.upload-text{font-size:10px;color:var(--light);text-align:center;line-height:1.6;}
+.upload-text{font-size:10px;color:var(–light);text-align:center;line-height:1.6;}
 input[type=file]{display:none;}
 .note-row{margin-bottom:14px;}
-.note-row label{font-size:11px;color:var(--light);display:block;margin-bottom:5px;letter-spacing:1px;}
-.note-input{width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid var(--line);background:rgba(255,255,255,0.6);font-family:'Zen Maru Gothic',sans-serif;font-size:13px;color:var(--text);outline:none;transition:border-color 0.2s;}
-.note-input:focus{border-color:var(--accent);}
-.tip-box{background:rgba(200,168,152,0.08);border-radius:10px;padding:9px 12px;font-size:10px;color:var(--light);text-align:center;margin-bottom:14px;line-height:1.7;}
-.tip-box a{color:var(--accent);text-decoration:none;}
+.note-row label{font-size:11px;color:var(–light);display:block;margin-bottom:5px;letter-spacing:1px;}
+.note-input{width:100%;padding:9px 12px;border-radius:10px;border:1.5px solid var(–line);background:rgba(255,255,255,0.6);font-family:‘Zen Maru Gothic’,sans-serif;font-size:13px;color:var(–text);outline:none;transition:border-color 0.2s;}
+.note-input:focus{border-color:var(–accent);}
+.tip-box{background:rgba(200,168,152,0.08);border-radius:10px;padding:9px 12px;font-size:10px;color:var(–light);text-align:center;margin-bottom:14px;line-height:1.7;}
+.tip-box a{color:var(–accent);text-decoration:none;}
 .sheet-btns{display:flex;gap:8px;}
-.btn-cancel{flex:1;padding:12px;border-radius:40px;border:1.5px solid var(--line);background:none;font-family:'Zen Maru Gothic',sans-serif;font-size:13px;color:var(--light);cursor:pointer;}
-.btn-save{flex:2;padding:12px;border-radius:40px;border:none;background:var(--text);font-family:'Zen Maru Gothic',sans-serif;font-size:13px;color:#faf7f3;font-weight:500;cursor:pointer;letter-spacing:1px;transition:opacity 0.2s;}
+.btn-cancel{flex:1;padding:12px;border-radius:40px;border:1.5px solid var(–line);background:none;font-family:‘Zen Maru Gothic’,sans-serif;font-size:13px;color:var(–light);cursor:pointer;}
+.btn-save{flex:2;padding:12px;border-radius:40px;border:none;background:var(–text);font-family:‘Zen Maru Gothic’,sans-serif;font-size:13px;color:#faf7f3;font-weight:500;cursor:pointer;letter-spacing:1px;transition:opacity 0.2s;}
 .btn-save:hover{opacity:0.85;}
-.btn-delete{display:block;margin:0 auto 10px;background:none;border:none;font-size:11px;color:#c4836a;cursor:pointer;letter-spacing:1px;text-decoration:underline;font-family:'Zen Maru Gothic',sans-serif;}
+.btn-delete{display:block;margin:0 auto 10px;background:none;border:none;font-size:11px;color:#c4836a;cursor:pointer;letter-spacing:1px;text-decoration:underline;font-family:‘Zen Maru Gothic’,sans-serif;}
 
 /* STATS */
-.stats-header{padding:32px 20px 8px;font-family:'Cormorant Garamond',serif;font-weight:300;font-size:28px;letter-spacing:4px;color:var(--text);text-align:center;}
+.stats-header{padding:32px 20px 8px;font-family:‘Cormorant Garamond’,serif;font-weight:300;font-size:28px;letter-spacing:4px;color:var(–text);text-align:center;}
 .stats-nav{display:flex;justify-content:center;align-items:center;gap:16px;padding:8px 0 20px;}
-.stats-month-label{font-family:'Cormorant Garamond',serif;font-size:18px;letter-spacing:3px;color:var(--text);}
+.stats-month-label{font-family:‘Cormorant Garamond’,serif;font-size:18px;letter-spacing:3px;color:var(–text);}
 .stat-cards{display:flex;flex-direction:column;gap:14px;padding:0 16px 16px;max-width:500px;margin:0 auto;}
-.stat-card{background:var(--paper);border-radius:16px;border:1px solid var(--line);padding:14px 16px;}
+.stat-card{background:var(–paper);border-radius:16px;border:1px solid var(–line);padding:14px 16px;}
 .stat-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .stat-cat-name{font-size:14px;font-weight:500;display:flex;align-items:center;gap:6px;}
-.stat-count{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--text);}
-.stat-count span{font-size:12px;color:var(--light);font-family:'Zen Maru Gothic',sans-serif;}
-.stat-bar-bg{height:6px;background:var(--line);border-radius:3px;overflow:hidden;}
-.stat-bar-fill{height:100%;border-radius:3px;transition:width 0.7s ease;background:var(--accent);}
-.stat-bar-fill.c-food{background:#c9a87c;}.stat-bar-fill.c-drink{background:var(--blue);}.stat-bar-fill.c-life{background:var(--green);}
-.stat-pct{font-size:11px;color:var(--light);margin-top:8px;letter-spacing:1px;}
-.stat-empty{font-size:11px;color:var(--light);text-align:center;padding:14px;letter-spacing:1px;}
+.stat-count{font-family:‘Cormorant Garamond’,serif;font-size:22px;color:var(–text);}
+.stat-count span{font-size:12px;color:var(–light);font-family:‘Zen Maru Gothic’,sans-serif;}
+.stat-bar-bg{height:6px;background:var(–line);border-radius:3px;overflow:hidden;}
+.stat-bar-fill{height:100%;border-radius:3px;transition:width 0.7s ease;background:var(–accent);}
+.stat-bar-fill.c-food{background:#c9a87c;}.stat-bar-fill.c-drink{background:var(–blue);}.stat-bar-fill.c-life{background:var(–green);}
+.stat-pct{font-size:11px;color:var(–light);margin-top:8px;letter-spacing:1px;}
+.stat-empty{font-size:11px;color:var(–light);text-align:center;padding:14px;letter-spacing:1px;}
 
 /* SETTINGS */
-.settings-header{padding:32px 20px 16px;font-family:'Cormorant Garamond',serif;font-weight:300;font-size:28px;letter-spacing:4px;color:var(--text);text-align:center;}
+.settings-header{padding:32px 20px 16px;font-family:‘Cormorant Garamond’,serif;font-weight:300;font-size:28px;letter-spacing:4px;color:var(–text);text-align:center;}
 .settings-section{max-width:500px;margin:0 auto 20px;padding:0 16px;}
-.settings-section-title{font-size:10px;letter-spacing:2px;color:var(--light);padding:0 4px 8px;border-bottom:1px solid var(--line);margin-bottom:2px;}
+.settings-section-title{font-size:10px;letter-spacing:2px;color:var(–light);padding:0 4px 8px;border-bottom:1px solid var(–line);margin-bottom:2px;}
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 4px;border-bottom:1px solid rgba(232,224,214,0.5);cursor:pointer;transition:opacity 0.2s;}
 .settings-row:hover{opacity:0.7;}.settings-row:last-child{border-bottom:none;}
 .settings-row-left{display:flex;align-items:center;gap:12px;}
 .settings-icon{font-size:20px;width:28px;text-align:center;}
-.settings-label{font-size:14px;color:var(--text);}
-.settings-desc{font-size:10px;color:var(--light);margin-top:2px;}
-.settings-arrow{font-size:14px;color:var(--line);}
-.settings-footer{text-align:center;padding:20px;font-size:11px;color:var(--light);letter-spacing:1px;}
-.sync-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(143,168,138,0.2);color:var(--green);letter-spacing:0.5px;}
-.sync-badge.err{background:rgba(192,131,106,0.15);color:var(--sat);}
+.settings-label{font-size:14px;color:var(–text);}
+.settings-desc{font-size:10px;color:var(–light);margin-top:2px;}
+.settings-arrow{font-size:14px;color:var(–line);}
+.settings-footer{text-align:center;padding:20px;font-size:11px;color:var(–light);letter-spacing:1px;}
+.sync-badge{font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(143,168,138,0.2);color:var(–green);letter-spacing:0.5px;}
+.sync-badge.err{background:rgba(192,131,106,0.15);color:var(–sat);}
 
 /* ANNIVERSARY */
 .anniv-list{max-width:500px;margin:0 auto;padding:0 16px 16px;}
 .anniv-item{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid rgba(232,224,214,0.5);}
 .anniv-item:last-child{border-bottom:none;}
 .anniv-left{display:flex;align-items:center;gap:10px;}
-.anniv-date{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--sat);letter-spacing:1px;min-width:54px;}
-.anniv-name{font-size:13px;color:var(--text);}
-.anniv-del{background:none;border:none;font-size:16px;color:var(--line);cursor:pointer;padding:4px;}
-.anniv-del:hover{color:var(--sat);}
-.add-anniv-row{display:flex;align-items:center;gap:8px;padding:12px 4px;font-size:13px;color:var(--accent);cursor:pointer;}
+.anniv-date{font-family:‘Cormorant Garamond’,serif;font-size:16px;color:var(–sat);letter-spacing:1px;min-width:54px;}
+.anniv-name{font-size:13px;color:var(–text);}
+.anniv-del{background:none;border:none;font-size:16px;color:var(–line);cursor:pointer;padding:4px;}
+.anniv-del:hover{color:var(–sat);}
+.add-anniv-row{display:flex;align-items:center;gap:8px;padding:12px 4px;font-size:13px;color:var(–accent);cursor:pointer;}
 .anniv-form{background:rgba(200,168,152,0.08);border-radius:12px;padding:14px;margin-bottom:14px;display:none;}
 .anniv-form.show{display:block;}
 .anniv-form-row{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;}
-.anniv-input{flex:1;min-width:80px;padding:8px 10px;border-radius:8px;border:1.5px solid var(--line);background:white;font-family:'Zen Maru Gothic',sans-serif;font-size:12px;color:var(--text);outline:none;}
-.anniv-input:focus{border-color:var(--accent);}
-.btn-anniv-save{padding:8px 16px;border-radius:20px;border:none;background:var(--text);color:#faf7f3;font-family:'Zen Maru Gothic',sans-serif;font-size:12px;cursor:pointer;}
-.anniv-empty{font-size:12px;color:var(--light);text-align:center;padding:20px;letter-spacing:1px;}
+.anniv-input{flex:1;min-width:80px;padding:8px 10px;border-radius:8px;border:1.5px solid var(–line);background:white;font-family:‘Zen Maru Gothic’,sans-serif;font-size:12px;color:var(–text);outline:none;}
+.anniv-input:focus{border-color:var(–accent);}
+.btn-anniv-save{padding:8px 16px;border-radius:20px;border:none;background:var(–text);color:#faf7f3;font-family:‘Zen Maru Gothic’,sans-serif;font-size:12px;cursor:pointer;}
+.anniv-empty{font-size:12px;color:var(–light);text-align:center;padding:20px;letter-spacing:1px;}
 
 /* CROP */
 .crop-overlay{position:fixed;inset:0;background:rgba(20,12,8,0.93);z-index:600;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;opacity:0;pointer-events:none;transition:opacity 0.3s;}
@@ -162,27 +163,29 @@ input[type=file]{display:none;}
 #cropCanvas{display:block;position:absolute;top:0;left:0;touch-action:none;}
 .crop-guide-box{position:absolute;inset:0;border:2px solid rgba(255,255,255,0.5);border-radius:4px;pointer-events:none;}
 .crop-btns{display:flex;gap:10px;}
-.btn-crop-cancel{padding:11px 24px;border-radius:30px;border:1.5px solid rgba(255,255,255,0.3);background:transparent;color:rgba(255,255,255,0.6);font-family:'Zen Maru Gothic',sans-serif;font-size:13px;cursor:pointer;}
-.btn-crop-ok{padding:11px 32px;border-radius:30px;border:none;background:var(--accent);color:white;font-family:'Zen Maru Gothic',sans-serif;font-size:13px;cursor:pointer;}
+.btn-crop-cancel{padding:11px 24px;border-radius:30px;border:1.5px solid rgba(255,255,255,0.3);background:transparent;color:rgba(255,255,255,0.6);font-family:‘Zen Maru Gothic’,sans-serif;font-size:13px;cursor:pointer;}
+.btn-crop-ok{padding:11px 32px;border-radius:30px;border:none;background:var(–accent);color:white;font-family:‘Zen Maru Gothic’,sans-serif;font-size:13px;cursor:pointer;}
 
 /* TOAST */
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--text);color:#faf7f3;padding:10px 20px;border-radius:30px;font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:500;white-space:nowrap;}
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(–text);color:#faf7f3;padding:10px 20px;border-radius:30px;font-size:13px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:500;white-space:nowrap;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 
 @media print{
-  .bnav,.cat-tabs,.cal-header .nav-btn,.overlay,.crop-overlay,.page:not(#page-cal){display:none!important;}
-  .page#page-cal{display:block!important;padding-bottom:0;}
-  body{background:white;}
-  .cal-outer{padding:0;}
-  .cal-header{position:static;}
-  .cal-table td{height:110px;}
-  .day-num{opacity:1!important;}
+.bnav,.cat-tabs,.cal-header .nav-btn,.overlay,.crop-overlay,.page:not(#page-cal){display:none!important;}
+.page#page-cal{display:block!important;padding-bottom:0;}
+body{background:white;}
+.cal-outer{padding:0;}
+.cal-header{position:static;}
+.cal-table td{height:110px;}
+.day-num{opacity:1!important;}
 }
 </style>
+
 </head>
 <body>
 
 <!-- CALENDAR -->
+
 <div class="page active" id="page-cal">
   <div class="cal-header">
     <button class="nav-btn" id="prevBtn">＜</button>
@@ -208,6 +211,7 @@ input[type=file]{display:none;}
 </div>
 
 <!-- STATS -->
+
 <div class="page" id="page-stats">
   <div class="stats-header">本月記錄</div>
   <div class="stats-nav">
@@ -219,6 +223,7 @@ input[type=file]{display:none;}
 </div>
 
 <!-- ANNIVERSARY -->
+
 <div class="page" id="page-anniv">
   <div class="settings-header">紀念日 🎀</div>
   <div class="anniv-list">
@@ -236,6 +241,7 @@ input[type=file]{display:none;}
 </div>
 
 <!-- SETTINGS -->
+
 <div class="page" id="page-settings">
   <div class="settings-header">設定</div>
   <div class="settings-section">
@@ -281,6 +287,7 @@ input[type=file]{display:none;}
 </div>
 
 <!-- CROP -->
+
 <div class="crop-overlay" id="cropOverlay">
   <div class="crop-title">拖曳移動 · 捏合縮放</div>
   <div class="crop-wrap" id="cropWrap">
@@ -294,10 +301,12 @@ input[type=file]{display:none;}
 </div>
 
 <!-- INPUTS -->
+
 <input type="file" id="fileInput"   accept="image/*" style="display:none">
 <input type="file" id="importInput" accept=".json"   style="display:none">
 
 <!-- SHEET -->
+
 <div class="overlay" id="overlay">
   <div class="sheet">
     <div class="sheet-handle"></div>
@@ -321,6 +330,7 @@ input[type=file]{display:none;}
 </div>
 
 <!-- BOTTOM NAV -->
+
 <nav class="bnav">
   <div class="bnav-item active" data-page="page-cal"><span class="bi">📅</span><span>日曆</span></div>
   <div class="bnav-item" data-page="page-stats"><span class="bi">📊</span><span>統計</span></div>
@@ -709,62 +719,171 @@ document.getElementById('cropCancel').addEventListener('click',()=>{
 });
 
 // ── Export / Import ──
-function loadScript(src){ return new Promise(r=>{ if(document.querySelector(`script[src="${src}"]`)){r();return;} const s=document.createElement('script');s.src=src;s.onload=r;document.head.appendChild(s); }); }
 
-function dlCanvas(canvas,fname){
-  const a=document.createElement('a');
-  a.href=canvas.toDataURL('image/png');
-  a.download=fname;
-  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+// 用 canvas 手動重繪月曆（不依賴 html2canvas，iOS 完全相容）
+async function buildCalCanvas() {
+  const COLS = 7;
+  const days = new Date(calYear, calMonth+1, 0).getDate();
+  const firstDow = new Date(calYear, calMonth, 1).getDay();
+  const offset = (firstDow+6)%7;
+  const rows = Math.ceil((offset+days)/7);
+
+  const DPR   = 2;          // 2× 解析度
+  const CW    = 320 * DPR;  // 總寬
+  const HPAD  = 20 * DPR;   // 上下邊距
+  const HDR   = 60 * DPR;   // 月份標題
+  const WDH   = 22 * DPR;   // 星期列高
+  const CELL  = 80 * DPR;   // 每格高度
+  const FOOTER= 30 * DPR;
+  const CH    = HPAD + HDR + WDH + rows*CELL + FOOTER + HPAD;
+
+  const cv  = document.createElement('canvas');
+  cv.width  = CW; cv.height = CH;
+  const ctx = cv.getContext('2d');
+
+  // 背景
+  ctx.fillStyle = '#f7f3ee';
+  ctx.fillRect(0,0,CW,CH);
+
+  // 月份標題
+  ctx.fillStyle = '#6b5b4e';
+  ctx.font = `${18*DPR}px serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText(`${calYear}.${String(calMonth+1).padStart(2,'0')}`, CW/2, HPAD + 38*DPR);
+
+  // 星期列
+  const WDS = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+  const colW = CW / COLS;
+  ctx.font = `${7*DPR}px serif`;
+  ctx.fillStyle = '#b0a090';
+  WDS.forEach((w,i)=>{
+    ctx.fillStyle = i>=5 ? '#c0836a' : '#b0a090';
+    ctx.fillText(w, colW*i + colW/2, HPAD + HDR + 15*DPR);
+  });
+
+  const gridTop = HPAD + HDR + WDH;
+
+  // 格線
+  ctx.strokeStyle = '#e8e0d6';
+  ctx.lineWidth = 0.5 * DPR;
+  // 外框
+  ctx.strokeRect(0, gridTop, CW, rows*CELL);
+  // 垂直線
+  for(let c=1;c<COLS;c++){ ctx.beginPath(); ctx.moveTo(c*colW, gridTop); ctx.lineTo(c*colW, gridTop+rows*CELL); ctx.stroke(); }
+  // 水平線
+  for(let r=1;r<rows;r++){ ctx.beginPath(); ctx.moveTo(0, gridTop+r*CELL); ctx.lineTo(CW, gridTop+r*CELL); ctx.stroke(); }
+
+  // 日期格子
+  const imgCache = {};
+  const loadImg = src => {
+    if(imgCache[src]) return imgCache[src];
+    return imgCache[src] = new Promise(res=>{
+      const i=new Image(); i.crossOrigin='anonymous';
+      i.onload=()=>res(i); i.onerror=()=>res(null); i.src=src;
+    });
+  };
+
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<COLS;c++){
+      const d = r*COLS + c - offset + 1;
+      if(d<1||d>days) continue;
+      const x = c*colW, y = gridTop + r*CELL;
+      const key = makeKey(calYear,calMonth,d,activeCat);
+      const entry = cache[key]||null;
+
+      if(entry?.url){
+        try{
+          const img = await loadImg(entry.url);
+          if(img){
+            // 置中填滿格子（contain）
+            const scale = Math.min((colW-4*DPR)/img.width, (CELL-4*DPR)/img.height);
+            const iw = img.width*scale, ih = img.height*scale;
+            const ix = x + (colW-iw)/2, iy = y + (CELL-ih)/2;
+            ctx.drawImage(img, ix, iy, iw, ih);
+          }
+        }catch(e){}
+      }
+
+      // 日期數字（有照片就不顯示）
+      if(!entry?.url){
+        ctx.font = `${8*DPR}px serif`;
+        ctx.textAlign = 'left';
+        ctx.fillStyle = c>=5 ? '#c0836a' : '#8a7060';
+        ctx.fillText(String(d), x + 4*DPR, y + 13*DPR);
+      }
+    }
+  }
+
+  // footer
+  ctx.font = `${8*DPR}px serif`;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#b0a090';
+  ctx.fillText("小日子 | Day's & Moments", 8*DPR, gridTop + rows*CELL + 20*DPR);
+
+  return cv;
 }
 
-async function captureCalendar(scale){
-  // must be on cal page
-  gotoPage('page-cal');
-  await new Promise(r=>setTimeout(r,500));
-  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
-  return html2canvas(document.getElementById('page-cal'),{
-    scale:scale||2, useCORS:true, allowTaint:true,
-    backgroundColor:'#f7f3ee',
-    ignoreElements:el=>el.classList.contains('bnav')||el.classList.contains('cat-tabs')||el.id==='overlay'||el.id==='cropOverlay'
-  });
+function dlCanvas(canvas, fname){
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = fname;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(()=>document.body.removeChild(a), 100);
 }
 
 // PNG
-document.getElementById('btnExportPNG').addEventListener('click',async()=>{
+document.getElementById('btnExportPNG').addEventListener('click', async()=>{
   showToast('產生中… 🖼️');
-  const c=await captureCalendar(2.5);
-  dlCanvas(c,`kohibi-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`);
-  showToast('PNG 已下載 🌸');
+  try{
+    const c = await buildCalCanvas();
+    dlCanvas(c, `kohibi-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`);
+    showToast('PNG 已下載 🌸');
+  }catch(e){ showToast('產生失敗，請重試 ❌'); console.error(e); }
 });
 
 // Stories 9:16
-document.getElementById('btnExportStories').addEventListener('click',async()=>{
+document.getElementById('btnExportStories').addEventListener('click', async()=>{
   showToast('產生限動版… ✨');
-  const src=await captureCalendar(2.5);
-  const W=src.width, H=Math.round(W*16/9);
-  const out=document.createElement('canvas'); out.width=W; out.height=H;
-  const ctx=out.getContext('2d');
-  ctx.fillStyle='#f7f3ee'; ctx.fillRect(0,0,W,H);
-  if(src.height<=H){ ctx.drawImage(src,0,Math.round((H-src.height)/2)); }
-  else { const s=H/src.height; const nw=Math.round(src.width*s); ctx.drawImage(src,Math.round((W-nw)/2),0,nw,H); }
-  dlCanvas(out,`kohibi-stories-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`);
-  showToast('限動版已下載 📱');
+  try{
+    const src = await buildCalCanvas();
+    const W = src.width, H = Math.round(W * 16/9);
+    const out = document.createElement('canvas');
+    out.width = W; out.height = H;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#f7f3ee';
+    ctx.fillRect(0,0,W,H);
+    if(src.height <= H){
+      ctx.drawImage(src, 0, Math.round((H-src.height)/2));
+    } else {
+      const s = H/src.height;
+      const nw = Math.round(src.width*s);
+      ctx.drawImage(src, Math.round((W-nw)/2), 0, nw, H);
+    }
+    dlCanvas(out, `kohibi-stories-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`);
+    showToast('限動版已下載 📱');
+  }catch(e){ showToast('產生失敗，請重試 ❌'); console.error(e); }
 });
 
-// PDF
-document.getElementById('btnExportPDF').addEventListener('click',async()=>{
+// PDF（用 canvas → data URL → 開新分頁讓使用者長按儲存，iOS 相容）
+document.getElementById('btnExportPDF').addEventListener('click', async()=>{
   showToast('產生 PDF… 🖨️');
-  const src=await captureCalendar(2);
-  await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
-  const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  const pgW=pdf.internal.pageSize.getWidth(), pgH=pdf.internal.pageSize.getHeight();
-  const ratio=Math.min((pgW-20)/src.width,(pgH-20)/src.height);
-  const w=src.width*ratio, h=src.height*ratio;
-  pdf.addImage(src.toDataURL('image/png'),'PNG',(pgW-w)/2,(pgH-h)/2,w,h);
-  pdf.save(`kohibi-${calYear}-${String(calMonth+1).padStart(2,'0')}.pdf`);
-  showToast('PDF 已下載 🖨️');
+  try{
+    const src = await buildCalCanvas();
+    // A4 比例 canvas (595 × 842 pt @ 2×)
+    const DPR = 2;
+    const PW = 595*DPR, PH = 842*DPR, PAD = 30*DPR;
+    const pdf = document.createElement('canvas');
+    pdf.width = PW; pdf.height = PH;
+    const ctx = pdf.getContext('2d');
+    ctx.fillStyle = '#f7f3ee';
+    ctx.fillRect(0,0,PW,PH);
+    const scale = Math.min((PW-PAD*2)/src.width, (PH-PAD*2)/src.height);
+    const w = src.width*scale, h = src.height*scale;
+    ctx.drawImage(src, (PW-w)/2, (PH-h)/2, w, h);
+    dlCanvas(pdf, `kohibi-${calYear}-${String(calMonth+1).padStart(2,'0')}.png`);
+    showToast('已下載（長按圖片可存 PDF）🖨️');
+  }catch(e){ showToast('產生失敗，請重試 ❌'); console.error(e); }
 });
 
 // JSON backup
@@ -790,5 +909,6 @@ document.getElementById('importInput').addEventListener('change',function(){
 renderCal();
 renderAnnivList();
 </script>
+
 </body>
 </html>
